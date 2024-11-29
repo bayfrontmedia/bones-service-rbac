@@ -1,0 +1,20 @@
+# [RBAC service](../README.md) > [Models](README.md) > TenantUserRoles
+
+The `Bayfront\BonesService\Rbac\Models\TenantUserRoles` model is used to manage the roles of tenant users.
+
+Allowed fields write:
+
+- `tenant_user`: ([Tenant user ID](tenantusers.md)) Required, string
+- `role`: ([Tenant role ID](tenantroles.md)) Required, string
+
+Unique fields:
+
+- `tenant_user` + `permission`
+
+Allowed fields read:
+
+- `id`
+- `tenant_user`
+- `role`
+- `created_at`
+- `updated_at`
