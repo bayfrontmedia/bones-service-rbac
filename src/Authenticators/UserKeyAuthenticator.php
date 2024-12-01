@@ -137,16 +137,17 @@ class UserKeyAuthenticator
 
         // Update key
 
-        $updated = $this->rbacService->ormService->db->update($userKeysModel->getTableName(), [
+        /*
+         * Do not check for successful update.
+         * If more than one authentication request is made per second, the last_used date
+         * will not change, and an update will not take place.
+         */
+
+        $this->rbacService->ormService->db->update($userKeysModel->getTableName(), [
             'last_used' => Time::getDateTime()
         ], [
             'id' => Arr::get($user_key, 'id', '')
         ]);
-
-        if (!$updated) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
-            throw new UnexpectedAuthenticationException('Unable to authenticate user: Unable to update user key');
-        }
 
         $this->rbacService->ormService->events->doEvent('rbac.auth.success', $user);
 

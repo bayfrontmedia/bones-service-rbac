@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renamed all models to include `Model` suffix.
 
+### Fixed
+
+- Fixed bug when updating user key during authentication.
+
 ## [1.0.0-beta] - 2024.11.29
 
 ### Added
