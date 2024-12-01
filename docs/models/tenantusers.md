@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantUsers
+# [RBAC service](../README.md) > [Models](README.md) > TenantUsersModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantUsers` model is used to manage tenant users.
+The `Bayfront\BonesService\Rbac\Models\TenantUsersModel` is used to manage tenant users.
 
 The `rbac.tenant.user.created`, `rbac.tenant.user.updated` and `rbac.tenant.user.deleted` [events](../events.md) are executed.
 

@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > Permissions
+# [RBAC service](../README.md) > [Models](README.md) > PermissionsModel
 
-The `Bayfront\BonesService\Rbac\Models\Permissions` model is used to manage global permissions.
+The `Bayfront\BonesService\Rbac\Models\PermissionsModel` is used to manage global permissions.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 

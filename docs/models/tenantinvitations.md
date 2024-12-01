@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantInvitations
+# [RBAC service](../README.md) > [Models](README.md) > TenantInvitationsModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantInvitations` model is used to manage tenant invitations.
+The `Bayfront\BonesService\Rbac\Models\TenantInvitationsModel` is used to manage tenant invitations.
 
 This model uses the [Prunable](https://github.com/bayfrontmedia/bones-service-orm/blob/master/src/Traits/Prunable.php) 
 and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.

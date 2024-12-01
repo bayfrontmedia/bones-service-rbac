@@ -13,8 +13,8 @@ use Bayfront\BonesService\Rbac\Exceptions\Authentication\UnexpectedAuthenticatio
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDisabledException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserNotVerifiedException;
-use Bayfront\BonesService\Rbac\Models\UserKeys;
-use Bayfront\BonesService\Rbac\Models\Users;
+use Bayfront\BonesService\Rbac\Models\UserKeysModel;
+use Bayfront\BonesService\Rbac\Models\UsersModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\User;
 use Bayfront\TimeHelpers\Time;
@@ -50,7 +50,7 @@ class UserKeyAuthenticator
 
         // ------------------------- User key -------------------------
 
-        $userKeysModel = new UserKeys($this->rbacService);
+        $userKeysModel = new UserKeysModel($this->rbacService);
 
         // User key exists
 
@@ -106,7 +106,7 @@ class UserKeyAuthenticator
 
         // ------------------------- User -------------------------
 
-        $usersModel = new Users($this->rbacService);
+        $usersModel = new UsersModel($this->rbacService);
 
         try {
             $user_resource = $usersModel->find(Arr::get($user_key, 'user', ''));

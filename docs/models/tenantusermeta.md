@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantUserMeta
+# [RBAC service](../README.md) > [Models](README.md) > TenantUserMetaModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantUserMeta` model is used to manage tenant user metadata.
+The `Bayfront\BonesService\Rbac\Models\TenantUserMetaModel` is used to manage tenant user metadata.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 

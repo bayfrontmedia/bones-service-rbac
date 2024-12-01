@@ -7,10 +7,7 @@ use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant role permissions model.
- */
-class TenantRolePermissions extends RbacModel
+class TenantRolePermissionsModel extends RbacModel
 {
 
     /**
@@ -57,8 +54,8 @@ class TenantRolePermissions extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'role' => TenantRoles::class,
-        'permission' => Permissions::class
+        'role' => TenantRolesModel::class,
+        'permission' => PermissionsModel::class
     ];
 
     /**

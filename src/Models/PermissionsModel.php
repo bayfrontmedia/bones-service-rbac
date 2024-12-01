@@ -3,22 +3,17 @@
 namespace Bayfront\BonesService\Rbac\Models;
 
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
-use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
-use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant meta model.
- */
-class TenantMeta extends RbacModel
+class PermissionsModel extends RbacModel
 {
 
-    use HasProtectedPrefix, SoftDeletes;
+    use SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -29,7 +24,7 @@ class TenantMeta extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_META);
+        parent::__construct($rbacService, $rbacService::TABLE_PERMISSIONS);
     }
 
     /**
@@ -63,9 +58,7 @@ class TenantMeta extends RbacModel
      *
      * @var array
      */
-    protected array $related_fields = [
-        'tenant' => Tenants::class
-    ];
+    protected array $related_fields = [];
 
     /**
      * Rules for any fields which can be written to the resource.
@@ -75,9 +68,8 @@ class TenantMeta extends RbacModel
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant' => 'required|isString|lengthEquals:36',
-        'meta_key' => 'required|isString|maxLength:255',
-        'meta_value' => 'required|maxLength:4000000000'
+        'name' => 'required|isString|maxLength:255',
+        'description' => 'isString|maxLength:255'
     ];
 
     /**
@@ -89,10 +81,7 @@ class TenantMeta extends RbacModel
      * @var array
      */
     protected array $unique_fields = [
-        [
-            'tenant',
-            'meta_key'
-        ]
+        'name'
     ];
 
     /**
@@ -102,9 +91,8 @@ class TenantMeta extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'tenant',
-        'meta_key',
-        'meta_value',
+        'name',
+        'description',
         'created_at',
         'updated_at',
         'deleted_at'
@@ -120,9 +108,8 @@ class TenantMeta extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'tenant',
-        'meta_key',
-        'meta_value'
+        'name',
+        'description'
     ];
 
     /**
@@ -158,8 +145,6 @@ class TenantMeta extends RbacModel
     /**
      * Filter fields before creating resource.
      *
-     * - Create UUID
-     *
      * @param array $fields
      * @return array
      */
@@ -183,15 +168,12 @@ class TenantMeta extends RbacModel
     /**
      * Filter query before reading resource(s).
      *
-     * - Filter protected meta prefix
-     *
      * @param Query $query
      * @return Query
-     * @throws UnexpectedException
      */
     protected function onReading(Query $query): Query
     {
-        return $this->filterProtectedPrefixReading($query); // Trait: HasProtectedPrefix
+        return $query;
     }
 
     /**
@@ -233,15 +215,12 @@ class TenantMeta extends RbacModel
     /**
      * Filter fields before writing to resource (creating and updating).
      *
-     * - Filter protected meta prefix
-     *
      * @param array $fields
      * @return array
-     * @throws InvalidFieldException
      */
     protected function onWriting(array $fields): array
     {
-        return $this->filterProtectedPrefixWriting($fields); // Trait: HasProtectedPrefix
+        return $fields;
     }
 
     /**
@@ -258,15 +237,12 @@ class TenantMeta extends RbacModel
     /**
      * Actions to perform before a resource is deleted.
      *
-     * - Filter protected meta prefix
-     *
      * @param OrmResource $resource
      * @return void
-     * @throws InvalidFieldException
      */
     protected function onDeleting(OrmResource $resource): void
     {
-        $this->filterProtectedPrefixDeleting($resource); // Trait: HasProtectedPrefix
+
     }
 
     /**
@@ -298,14 +274,12 @@ class TenantMeta extends RbacModel
      * Functions executed inside another are ignored.
      * The name of the function is passed as a parameter.
      *
-     * - Reset protected meta prefix filters
-     *
      * @param string $function (Function which completed)
      * @return void
      */
     protected function onComplete(string $function): void
     {
-        $this->resetProtectedPrefixFilter(); // Trait: HasProtectedPrefix
+
     }
 
     /*
@@ -331,29 +305,27 @@ class TenantMeta extends RbacModel
      */
 
     /**
-     * Find tenant meta by tenant ID and meta key value.
+     * Find permission by name.
      *
      * Can be used with the SoftDeletes trait trashed filters.
      *
-     * @param string $tenant_id
-     * @param string $meta_key
+     * @param string $name
      * @return OrmResource
      * @throws DoesNotExistException
      * @throws UnexpectedException
      */
-    public function findByKey(string $tenant_id, string $meta_key): OrmResource
+    public function findByName(string $name): OrmResource
     {
 
-        $meta_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenantId AND meta_key = :metaKey", [
-            'tenantId' => $tenant_id,
-            'metaKey' => $meta_key
+        $permission_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE name = :name", [
+            'name' => $name
         ]);
 
-        if (!$meta_id) {
-            throw new DoesNotExistException('Unable to find tenant meta: Meta does not exist');
+        if (!$permission_id) {
+            throw new DoesNotExistException('Unable to find permission: Permission does not exist');
         }
 
-        return $this->find($meta_id);
+        return $this->find($permission_id);
 
     }
 

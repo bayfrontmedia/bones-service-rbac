@@ -2,27 +2,19 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
-use Bayfront\Bones\Application\Utilities\App;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
+use Bayfront\BonesService\Orm\Exceptions\InvalidRequestException;
+use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
-use Bayfront\BonesService\Orm\Traits\Castable;
-use Bayfront\BonesService\Orm\Traits\Prunable;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
-use Bayfront\StringHelpers\Str;
-use Bayfront\TimeHelpers\Time;
+use Exception;
 
-/**
- * User keys model.
- */
-class UserKeys extends RbacModel
+class TenantUsersModel extends RbacModel
 {
-
-    use Castable, Prunable, SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -33,7 +25,7 @@ class UserKeys extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_USER_KEYS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USERS);
     }
 
     /**
@@ -68,7 +60,8 @@ class UserKeys extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'user' => Users::class
+        'tenant' => TenantsModel::class,
+        'user' => UsersModel::class
     ];
 
     /**
@@ -79,11 +72,8 @@ class UserKeys extends RbacModel
      * @var array
      */
     protected array $allowed_fields_write = [
-        'user' => 'required|isString|lengthEquals:36',
-        'name' => 'required|isString|maxLength:255',
-        'allowed_domains' => 'isArray',
-        'allowed_ips' => 'isArray',
-        'expires_at' => 'date:Y-m-d H:i:s'
+        'tenant' => 'required|isString|lengthEquals:36',
+        'user' => 'required|isString|lengthEquals:36'
     ];
 
     /**
@@ -96,8 +86,8 @@ class UserKeys extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'user',
-            'name'
+            'tenant',
+            'user'
         ]
     ];
 
@@ -108,15 +98,10 @@ class UserKeys extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
+        'tenant',
         'user',
-        'name',
-        'allowed_domains',
-        'allowed_ips',
-        'expires_at',
-        'last_used',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -129,10 +114,8 @@ class UserKeys extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'user',
-        'name',
-        'allowed_domains',
-        'allowed_ips'
+        'tenant',
+        'user'
     ];
 
     /**
@@ -169,37 +152,14 @@ class UserKeys extends RbacModel
      * Filter fields before creating resource.
      *
      * - Create UUID
-     * - Create key, ensuring uniqueness
-     * - Ensure expires_at is set and valid
      *
      * @param array $fields
      * @return array
-     * @throws InvalidFieldException
      */
     protected function onCreating(array $fields): array
     {
-
         $fields['id'] = $this->createUuid();
-
-        $fields['key_value'] = $this->createNewKey();
-
-        if (!isset($fields['expires_at'])) {
-
-            $fields['expires_at'] = Time::getDateTime(time() + ($this->rbacService->getConfig('user.key.max_mins', 0) * 60));
-
-        } else if ($this->rbacService->getConfig('user.key.max_mins', 0) > 0) {
-
-            $exp = strtotime($fields['expires_at']);
-
-            if ($exp < time()
-                || $exp > time() + ($this->rbacService->getConfig('user.key.max_mins', 0) * 60)) {
-                throw new InvalidFieldException('Unable to create user key: Expiration is not valid');
-            }
-
-        }
-
         return $fields;
-
     }
 
     /**
@@ -210,7 +170,7 @@ class UserKeys extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.created', $resource);
+        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.created', $resource);
     }
 
     /**
@@ -227,45 +187,55 @@ class UserKeys extends RbacModel
     /**
      * Filter fields after a resource is read.
      *
-     * - Return raw key value once when created
-     * - Transform fields
-     *
      * @param array $fields
      * @return array
-     * @throws UnexpectedException
      */
     protected function onRead(array $fields): array
     {
-
-        if ($this->raw_key !== '') {
-            $fields['key_value'] = $this->raw_key;
-            $this->raw_key = ''; // Reset
-        }
-
-        return $this->transform($fields, [
-            'allowed_domains' => [$this, 'jsonDecode'],
-            'allowed_ips' => [$this, 'jsonDecode']
-        ]);
+        return $fields;
     }
 
     /**
      * Filter fields before updating resource.
      *
-     * - Do not allow updating expires_at field
+     * - Ensure tenant owner is not removed from tenant
      *
      * @param OrmResource $existing
      * @param array $fields (Fields to update)
      * @return array
      * @throws InvalidFieldException
+     * @throws UnexpectedException
      */
     protected function onUpdating(OrmResource $existing, array $fields): array
     {
 
-        if (isset($fields['expires_at'])) {
-            throw new InvalidFieldException('Unable to update user key: Expiration cannot be modified');
+        try {
+
+            $tenantsModel = new TenantsModel($this->rbacService);
+            $tenant_owner = $tenantsModel->getOwnerId($existing->get('tenant', ''));
+
+        } catch (Exception) {
+            throw new UnexpectedException('Unable to update tenant user: Error validating tenant owner');
+        }
+
+        if (isset($fields['tenant'])) {
+
+            if ($existing->get('user') == $tenant_owner && $fields['tenant'] !== $existing->get('tenant')) {
+                throw new InvalidFieldException('Unable to update tenant user: Tenant owner cannot be removed');
+            }
+
+        }
+
+        if (isset($fields['user'])) {
+
+            if ($existing->get('user') == $tenant_owner && $fields['user'] !== $tenant_owner) {
+                throw new InvalidFieldException('Unable to update tenant user: Tenant owner cannot be removed');
+            }
+
         }
 
         return $fields;
+
     }
 
     /**
@@ -278,25 +248,18 @@ class UserKeys extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.updated', $resource, $previous, $fields);
+        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.updated', $resource, $previous, $fields);
     }
 
     /**
      * Filter fields before writing to resource (creating and updating).
      *
-     * - Transform fields
-     *
      * @param array $fields
      * @return array
-     * @throws UnexpectedException
      */
     protected function onWriting(array $fields): array
     {
-        return $this->transform($fields, [
-            'allowed_domains' => [$this, 'jsonEncode'],
-            'allowed_ips' => [$this, 'jsonEncode'],
-            'expires_at' => [$this, 'datetime']
-        ]);
+        return $fields;
     }
 
     /**
@@ -313,11 +276,28 @@ class UserKeys extends RbacModel
     /**
      * Actions to perform before a resource is deleted.
      *
+     * - Ensure tenant owner is not removed from tenant
+     *
      * @param OrmResource $resource
      * @return void
+     * @throws InvalidRequestException
+     * @throws UnexpectedException
      */
     protected function onDeleting(OrmResource $resource): void
     {
+
+        try {
+
+            $tenantsModel = new TenantsModel($this->rbacService);
+            $tenant_owner = $tenantsModel->getOwnerId($resource->get('tenant', ''));
+
+        } catch (OrmServiceException) {
+            throw new UnexpectedException('Unable to delete tenant user: Error validating tenant owner');
+        }
+
+        if ($resource->get('user') == $tenant_owner) {
+            throw new InvalidRequestException('Unable to delete tenant user: Tenant owner cannot be removed');
+        }
 
     }
 
@@ -329,7 +309,7 @@ class UserKeys extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.deleted', $resource);
+        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.deleted', $resource);
     }
 
     /**
@@ -360,91 +340,51 @@ class UserKeys extends RbacModel
 
     /*
      * |--------------------------------------------------------------------------
-     * | Traits
-     * |--------------------------------------------------------------------------
-     */
-
-    /**
-     * Trait: Prunable
-     *
-     * @inheritDoc
-     */
-    protected function getPruneField(): string
-    {
-        return 'expires_at';
-    }
-
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
-    /*
-     * |--------------------------------------------------------------------------
      * | Model-specific
      * |--------------------------------------------------------------------------
      */
 
-    private string $raw_key = '';
-
-    private function createNewKey(): string
-    {
-
-        $raw_key = Str::random(36, 'alphanumeric');
-        $hashed_key = App::createHash($raw_key, App::getConfig('app.key', ''), 'sha256', true);
-
-        if ($this->hashedKeyExists($hashed_key)) {
-            return $this->createNewKey();
-        }
-
-        $this->raw_key = $raw_key;
-        return $hashed_key;
-
-    }
-
     /**
-     * Does a user key exist with hashed key value?
-     * This includes soft-deleted keys to ensure keys are unique.
-     *
-     * @param string $hashed_key
-     * @return bool
-     */
-    private function hashedKeyExists(string $hashed_key): bool
-    {
-
-        return $this->rbacService->ormService->db->exists($this->table_name, [
-            'key_value' => $hashed_key
-        ]);
-
-    }
-
-    /**
-     * Find user key by key value.
+     * Find tenant user by tenant and user ID.
      *
      * Can be used with the SoftDeletes trait trashed filters.
      *
-     * @param string $key
+     * @param string $tenant_id
+     * @param string $user_id
      * @return OrmResource
      * @throws DoesNotExistException
      * @throws UnexpectedException
      */
-    public function findByKey(string $key): OrmResource
+    public function findByUserId(string $tenant_id, string $user_id): OrmResource
     {
 
-        $key_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE key_value = :keyValue", [
-            'keyValue' => App::createHash($key, App::getConfig('app.key', ''), 'sha256', true)
+        $tenant_user_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenantId AND user = :userId", [
+            'tenantId' => $tenant_id,
+            'userId' => $user_id
         ]);
 
-        if (!$key_id) {
-            throw new DoesNotExistException('Unable to find user key: Key does not exist');
+        if (!$tenant_user_id) {
+            throw new DoesNotExistException('Unable to find tenant user: User does not exist');
         }
 
-        return $this->find($key_id);
+        return $this->find($tenant_user_id);
+
+    }
+
+    /**
+     * Is user in tenant?
+     *
+     * @param string $tenant_id
+     * @param string $user_id
+     * @return bool
+     */
+    public function inTenant(string $tenant_id, string $user_id): bool
+    {
+
+        return $this->ormService->db->exists($this->table_name, [
+            'tenant' => $tenant_id,
+            'user' => $user_id
+        ]);
 
     }
 

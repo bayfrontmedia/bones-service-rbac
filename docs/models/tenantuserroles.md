@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantUserRoles
+# [RBAC service](../README.md) > [Models](README.md) > TenantUserRolesModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantUserRoles` model is used to manage the roles of tenant users.
+The `Bayfront\BonesService\Rbac\Models\TenantUserRolesModel` is used to manage the roles of tenant users.
 
 Allowed fields write:
 

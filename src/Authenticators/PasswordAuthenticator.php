@@ -9,7 +9,7 @@ use Bayfront\BonesService\Rbac\Exceptions\Authentication\UnexpectedAuthenticatio
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDisabledException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserNotVerifiedException;
-use Bayfront\BonesService\Rbac\Models\Users;
+use Bayfront\BonesService\Rbac\Models\UsersModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\User;
 
@@ -38,7 +38,7 @@ class PasswordAuthenticator
     public function authenticate(string $email, string $password): User
     {
 
-        $usersModel = new Users($this->rbacService);
+        $usersModel = new UsersModel($this->rbacService);
 
         $users_table = $usersModel->getTableName();
 

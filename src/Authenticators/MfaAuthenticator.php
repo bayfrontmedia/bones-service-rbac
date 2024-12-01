@@ -9,7 +9,7 @@ use Bayfront\BonesService\Rbac\Exceptions\Authentication\UnexpectedAuthenticatio
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDisabledException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserNotVerifiedException;
-use Bayfront\BonesService\Rbac\Models\Users;
+use Bayfront\BonesService\Rbac\Models\UsersModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\User;
 
@@ -40,7 +40,7 @@ class MfaAuthenticator
 
         // ------------------------- MFA -------------------------
 
-        $usersModel = new Users($this->rbacService);
+        $usersModel = new UsersModel($this->rbacService);
 
         if (!$usersModel->mfaIsValid($email, $mfa_value)) {
             $this->rbacService->ormService->events->doEvent('rbac.auth.fail.mfa', $email);

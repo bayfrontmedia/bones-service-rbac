@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > Users
+# [RBAC service](../README.md) > [Models](README.md) > UsersModel
 
-The `Bayfront\BonesService\Rbac\Models\Users` model is used to manage users.
+The `Bayfront\BonesService\Rbac\Models\UsersModel` is used to manage users.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 

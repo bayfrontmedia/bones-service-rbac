@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantUserTeams
+# [RBAC service](../README.md) > [Models](README.md) > TenantUserTeamsModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantUserTeams` model is used to manage the teams of tenant users.
+The `Bayfront\BonesService\Rbac\Models\TenantUserTeamsModel` is used to manage the teams of tenant users.
 
 Allowed fields write:
 

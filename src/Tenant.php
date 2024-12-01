@@ -7,7 +7,7 @@ use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
-use Bayfront\BonesService\Rbac\Models\TenantMeta;
+use Bayfront\BonesService\Rbac\Models\TenantMetaModel;
 
 /**
  * Read-only tenant.
@@ -21,7 +21,7 @@ class Tenant
 
     /**
      * @param RbacService $rbacService
-     * @param OrmResource $ormResource (Tenants model resource)
+     * @param OrmResource $ormResource (TenantsModel resource)
      */
     public function __construct(RbacService $rbacService, OrmResource $ormResource)
     {
@@ -161,10 +161,10 @@ class Tenant
             return;
         }
 
-        $metaModel = new TenantMeta($this->rbacService);
+        $tenantMetaModel = new TenantMetaModel($this->rbacService);
 
         try {
-            $meta = $metaModel->findByKey($this->getId(), $meta_key);
+            $meta = $tenantMetaModel->findByKey($this->getId(), $meta_key);
             $this->tenant_meta[$meta_key] = $meta->get('meta_value');
         } catch (DoesNotExistException) {
             $this->tenant_meta[$meta_key] = null;

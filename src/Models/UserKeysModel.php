@@ -2,25 +2,24 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
-use Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException;
+use Bayfront\Bones\Application\Utilities\App;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
+use Bayfront\BonesService\Orm\Traits\Castable;
 use Bayfront\BonesService\Orm\Traits\Prunable;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
+use Bayfront\StringHelpers\Str;
 use Bayfront\TimeHelpers\Time;
 
-/**
- * Tenant invitations model.
- */
-class TenantInvitations extends RbacModel
+class UserKeysModel extends RbacModel
 {
 
-    use Prunable, SoftDeletes;
+    use Castable, Prunable, SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -31,7 +30,7 @@ class TenantInvitations extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_INVITATIONS);
+        parent::__construct($rbacService, $rbacService::TABLE_USER_KEYS);
     }
 
     /**
@@ -66,8 +65,7 @@ class TenantInvitations extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant' => Tenants::class,
-        'role' => TenantRoles::class
+        'user' => UsersModel::class
     ];
 
     /**
@@ -78,9 +76,11 @@ class TenantInvitations extends RbacModel
      * @var array
      */
     protected array $allowed_fields_write = [
-        'email' => 'required|email|maxLength:255',
-        'tenant' => 'required|isString|lengthEquals:36',
-        'role' => 'required|isString|lengthEquals:36'
+        'user' => 'required|isString|lengthEquals:36',
+        'name' => 'required|isString|maxLength:255',
+        'allowed_domains' => 'isArray',
+        'allowed_ips' => 'isArray',
+        'expires_at' => 'date:Y-m-d H:i:s'
     ];
 
     /**
@@ -93,8 +93,8 @@ class TenantInvitations extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'email',
-            'tenant'
+            'user',
+            'name'
         ]
     ];
 
@@ -105,10 +105,12 @@ class TenantInvitations extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'email',
-        'tenant',
-        'role',
+        'user',
+        'name',
+        'allowed_domains',
+        'allowed_ips',
         'expires_at',
+        'last_used',
         'created_at',
         'updated_at',
         'deleted_at'
@@ -124,9 +126,10 @@ class TenantInvitations extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'email',
-        'tenant',
-        'role'
+        'user',
+        'name',
+        'allowed_domains',
+        'allowed_ips'
     ];
 
     /**
@@ -163,16 +166,37 @@ class TenantInvitations extends RbacModel
      * Filter fields before creating resource.
      *
      * - Create UUID
-     * - Define expires_at
+     * - Create key, ensuring uniqueness
+     * - Ensure expires_at is set and valid
      *
      * @param array $fields
      * @return array
+     * @throws InvalidFieldException
      */
     protected function onCreating(array $fields): array
     {
+
         $fields['id'] = $this->createUuid();
-        $fields['expires_at'] = Time::getDateTime(time() + ($this->rbacService->getConfig('invitation_duration', 0) * 60));
+
+        $fields['key_value'] = $this->createNewKey();
+
+        if (!isset($fields['expires_at'])) {
+
+            $fields['expires_at'] = Time::getDateTime(time() + ($this->rbacService->getConfig('user.key.max_mins', 0) * 60));
+
+        } else if ($this->rbacService->getConfig('user.key.max_mins', 0) > 0) {
+
+            $exp = strtotime($fields['expires_at']);
+
+            if ($exp < time()
+                || $exp > time() + ($this->rbacService->getConfig('user.key.max_mins', 0) * 60)) {
+                throw new InvalidFieldException('Unable to create user key: Expiration is not valid');
+            }
+
+        }
+
         return $fields;
+
     }
 
     /**
@@ -183,7 +207,7 @@ class TenantInvitations extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.invitation.created', $resource);
+        $this->rbacService->ormService->events->doEvent('rbac.user.key.created', $resource);
     }
 
     /**
@@ -200,23 +224,44 @@ class TenantInvitations extends RbacModel
     /**
      * Filter fields after a resource is read.
      *
+     * - Return raw key value once when created
+     * - Transform fields
+     *
      * @param array $fields
      * @return array
+     * @throws UnexpectedException
      */
     protected function onRead(array $fields): array
     {
-        return $fields;
+
+        if ($this->raw_key !== '') {
+            $fields['key_value'] = $this->raw_key;
+            $this->raw_key = ''; // Reset
+        }
+
+        return $this->transform($fields, [
+            'allowed_domains' => [$this, 'jsonDecode'],
+            'allowed_ips' => [$this, 'jsonDecode']
+        ]);
     }
 
     /**
      * Filter fields before updating resource.
      *
+     * - Do not allow updating expires_at field
+     *
      * @param OrmResource $existing
      * @param array $fields (Fields to update)
      * @return array
+     * @throws InvalidFieldException
      */
     protected function onUpdating(OrmResource $existing, array $fields): array
     {
+
+        if (isset($fields['expires_at'])) {
+            throw new InvalidFieldException('Unable to update user key: Expiration cannot be modified');
+        }
+
         return $fields;
     }
 
@@ -230,18 +275,25 @@ class TenantInvitations extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-
+        $this->rbacService->ormService->events->doEvent('rbac.user.key.updated', $resource, $previous, $fields);
     }
 
     /**
      * Filter fields before writing to resource (creating and updating).
      *
+     * - Transform fields
+     *
      * @param array $fields
      * @return array
+     * @throws UnexpectedException
      */
     protected function onWriting(array $fields): array
     {
-        return $fields;
+        return $this->transform($fields, [
+            'allowed_domains' => [$this, 'jsonEncode'],
+            'allowed_ips' => [$this, 'jsonEncode'],
+            'expires_at' => [$this, 'datetime']
+        ]);
     }
 
     /**
@@ -274,7 +326,7 @@ class TenantInvitations extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-
+        $this->rbacService->ormService->events->doEvent('rbac.user.key.deleted', $resource);
     }
 
     /**
@@ -335,115 +387,61 @@ class TenantInvitations extends RbacModel
      * |--------------------------------------------------------------------------
      */
 
-    /**
-     * Find tenant invitation by email and tenant ID.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
-     *
-     * @param string $email
-     * @param string $tenant_id
-     * @return OrmResource
-     * @throws DoesNotExistException
-     * @throws UnexpectedException
-     */
-    public function findByEmail(string $email, string $tenant_id): OrmResource
+    private string $raw_key = '';
+
+    private function createNewKey(): string
     {
 
-        $invitation_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email AND tenant = :tenant", [
-            'email' => $email,
-            'tenant' => $tenant_id
-        ]);
+        $raw_key = Str::random(36, 'alphanumeric');
+        $hashed_key = App::createHash($raw_key, App::getConfig('app.key', ''), 'sha256', true);
 
-        if (!$invitation_id) {
-            throw new DoesNotExistException('Unable to find tenant invitation: Invitation does not exist');
+        if ($this->hashedKeyExists($hashed_key)) {
+            return $this->createNewKey();
         }
 
-        return $this->find($invitation_id);
+        $this->raw_key = $raw_key;
+        return $hashed_key;
 
     }
 
     /**
-     * Accept tenant invitation using email and tenant ID.
+     * Does a user key exist with hashed key value?
+     * This includes soft-deleted keys to ensure keys are unique.
      *
-     * Adds non-deleted user to tenant with invited role and deletes invitation.
-     * The rbac.tenant.invitation.accepted event is executed on success.
-     *
-     * @param string $email
-     * @param string $tenant_id
-     * @return void
-     * @throws DoesNotExistException
-     * @throws InvalidFieldException
-     * @throws UnexpectedException
+     * @param string $hashed_key
+     * @return bool
      */
-    public function accept(string $email, string $tenant_id): void
+    private function hashedKeyExists(string $hashed_key): bool
     {
 
-        // Get invitation
-
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $invitation = $this->rbacService->ormService->db->row("SELECT id, role, expires_at FROM $this->table_name WHERE email = :email AND tenant = :tenant AND $deleted_at_field IS NULL", [
-            'email' => $email,
-            'tenant' => $tenant_id
+        return $this->rbacService->ormService->db->exists($this->table_name, [
+            'key_value' => $hashed_key
         ]);
 
-        if (!$invitation) {
-            throw new DoesNotExistException('Unable to verify tenant invitation: Invitation does not exist');
+    }
+
+    /**
+     * Find user key by key value.
+     *
+     * Can be used with the SoftDeletes trait trashed filters.
+     *
+     * @param string $key
+     * @return OrmResource
+     * @throws DoesNotExistException
+     * @throws UnexpectedException
+     */
+    public function findByKey(string $key): OrmResource
+    {
+
+        $key_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE key_value = :keyValue", [
+            'keyValue' => App::createHash($key, App::getConfig('app.key', ''), 'sha256', true)
+        ]);
+
+        if (!$key_id) {
+            throw new DoesNotExistException('Unable to find user key: Key does not exist');
         }
 
-        // Delete if expired
-
-        if (Time::inPast($invitation['expires_at'])) {
-
-            $this->delete($invitation['id']);
-
-            throw new DoesNotExistException('Unable to verify tenant invitation: Invitation is expired');
-
-        }
-
-        // Check user exists with email
-
-        $users = new Users($this->rbacService);
-
-        $user = $users->findByEmail($email);
-
-        // Add user to tenant
-
-        $tenantUsers = new TenantUsers($this->rbacService);
-
-        try {
-
-            $tu = $tenantUsers->create([
-                'tenant' => $tenant_id,
-                'user' => $user->getPrimaryKey()
-            ]);
-
-        } catch (AlreadyExistsException) { // User has already been added to tenant
-
-            $tu = $tenantUsers->findByUserId($tenant_id, $user->getPrimaryKey());
-
-        }
-
-        // Add tenant user to role
-
-        $tenantUserRoles = new TenantUserRoles($this->rbacService);
-
-        try {
-
-            $tenantUserRoles->create([
-                'tenant_user' => $tu->getPrimaryKey(),
-                'role' => $invitation['role']
-            ]);
-
-        } catch (AlreadyExistsException) {
-            // User already has role. Do nothing
-        }
-
-        // Delete invitation
-
-        $this->delete($invitation['id']);
-
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.invitation.accepted', $user, $tenant_id);
+        return $this->find($key_id);
 
     }
 

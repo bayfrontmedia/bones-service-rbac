@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > Tenants
+# [RBAC service](../README.md) > [Models](README.md) > TenantsModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantRoles` model is used to manage tenants.
+The `Bayfront\BonesService\Rbac\Models\TenantsModel` is used to manage tenants.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 

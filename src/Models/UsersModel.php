@@ -19,10 +19,7 @@ use Bayfront\TimeHelpers\Time;
 use Bayfront\Validator\Rules\IsJson;
 use Exception;
 
-/**
- * Users model.
- */
-class Users extends RbacModel
+class UsersModel extends RbacModel
 {
 
     use Castable, SoftDeletes;
@@ -317,12 +314,12 @@ class Users extends RbacModel
     {
 
         try {
-            $tenants = new Tenants($this->rbacService);
+            $tenantsModel = new TenantsModel($this->rbacService);
         } catch (Exception) {
             throw new UnexpectedException('Unable to delete user: Error validating tenants');
         }
 
-        $owned = $this->ormService->db->count($tenants->getTableName(), [
+        $owned = $this->ormService->db->count($tenantsModel->getTableName(), [
             'owner' => $resource->getPrimaryKey()
         ]);
 

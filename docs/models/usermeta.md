@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > UserMeta
+# [RBAC service](../README.md) > [Models](README.md) > UserMetaModel
 
-The `Bayfront\BonesService\Rbac\Models\UserMeta` model is used to manage user metadata.
+The `Bayfront\BonesService\Rbac\Models\UserMetaModel` is used to manage user metadata.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 

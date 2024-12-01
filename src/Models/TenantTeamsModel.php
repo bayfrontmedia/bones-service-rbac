@@ -2,16 +2,18 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
+use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
+use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
+use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant user teams model.
- */
-class TenantUserTeams extends RbacModel
+class TenantTeamsModel extends RbacModel
 {
+
+    use SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -22,7 +24,7 @@ class TenantUserTeams extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USER_TEAMS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_TEAMS);
     }
 
     /**
@@ -57,8 +59,7 @@ class TenantUserTeams extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant_user' => TenantUsers::class,
-        'team' => TenantTeams::class
+        'tenant' => TenantsModel::class
     ];
 
     /**
@@ -69,8 +70,9 @@ class TenantUserTeams extends RbacModel
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant_user' => 'required|isString|lengthEquals:36',
-        'team' => 'required|isString|lengthEquals:36'
+        'tenant' => 'required|isString|lengthEquals:36',
+        'name' => 'required|isString|maxLength:255',
+        'description' => 'isString|maxLength:255'
     ];
 
     /**
@@ -83,8 +85,8 @@ class TenantUserTeams extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'tenant_user',
-            'team'
+            'tenant',
+            'name'
         ]
     ];
 
@@ -95,10 +97,12 @@ class TenantUserTeams extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'tenant_user',
-        'team',
+        'tenant',
+        'name',
+        'description',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'deleted_at'
     ];
 
     /**
@@ -111,8 +115,9 @@ class TenantUserTeams extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'tenant_user',
-        'team'
+        'tenant',
+        'name',
+        'description'
     ];
 
     /**
@@ -289,8 +294,51 @@ class TenantUserTeams extends RbacModel
 
     /*
      * |--------------------------------------------------------------------------
+     * | Traits
+     * |--------------------------------------------------------------------------
+     */
+
+    /**
+     * Trait: SoftDeletes
+     *
+     * @inheritDoc
+     */
+    protected function getDeletedAtField(): string
+    {
+        return 'deleted_at';
+    }
+
+    /*
+     * |--------------------------------------------------------------------------
      * | Model-specific
      * |--------------------------------------------------------------------------
      */
+
+    /**
+     * Find tenant team by tenant ID and name.
+     *
+     * Can be used with the SoftDeletes trait trashed filters.
+     *
+     * @param string $tenant_id
+     * @param string $name
+     * @return OrmResource
+     * @throws DoesNotExistException
+     * @throws UnexpectedException
+     */
+    public function findByName(string $tenant_id, string $name): OrmResource
+    {
+
+        $team_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
+            'tenant' => $tenant_id,
+            'name' => $name
+        ]);
+
+        if (!$team_id) {
+            throw new DoesNotExistException('Unable to find tenant team: Team does not exist');
+        }
+
+        return $this->find($team_id);
+
+    }
 
 }

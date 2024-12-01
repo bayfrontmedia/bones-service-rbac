@@ -3,21 +3,17 @@
 namespace Bayfront\BonesService\Rbac\Models;
 
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
-use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
-use Bayfront\BonesService\Orm\Exceptions\InvalidRequestException;
-use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
+use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
-use Exception;
 
-/**
- * Tenant users model.
- */
-class TenantUsers extends RbacModel
+class TenantRolesModel extends RbacModel
 {
+
+    use SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -28,7 +24,7 @@ class TenantUsers extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USERS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_ROLES);
     }
 
     /**
@@ -63,8 +59,7 @@ class TenantUsers extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant' => Tenants::class,
-        'user' => Users::class
+        'tenant' => TenantsModel::class
     ];
 
     /**
@@ -76,7 +71,8 @@ class TenantUsers extends RbacModel
      */
     protected array $allowed_fields_write = [
         'tenant' => 'required|isString|lengthEquals:36',
-        'user' => 'required|isString|lengthEquals:36'
+        'name' => 'required|isString|maxLength:255',
+        'description' => 'isString|maxLength:255'
     ];
 
     /**
@@ -90,7 +86,7 @@ class TenantUsers extends RbacModel
     protected array $unique_fields = [
         [
             'tenant',
-            'user'
+            'name'
         ]
     ];
 
@@ -102,9 +98,11 @@ class TenantUsers extends RbacModel
     protected array $allowed_fields_read = [
         'id',
         'tenant',
-        'user',
+        'name',
+        'description',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'deleted_at'
     ];
 
     /**
@@ -118,7 +116,8 @@ class TenantUsers extends RbacModel
     protected array $search_fields = [
         'id',
         'tenant',
-        'user'
+        'name',
+        'description'
     ];
 
     /**
@@ -173,7 +172,7 @@ class TenantUsers extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.created', $resource);
+
     }
 
     /**
@@ -201,44 +200,13 @@ class TenantUsers extends RbacModel
     /**
      * Filter fields before updating resource.
      *
-     * - Ensure tenant owner is not removed from tenant
-     *
      * @param OrmResource $existing
      * @param array $fields (Fields to update)
      * @return array
-     * @throws InvalidFieldException
-     * @throws UnexpectedException
      */
     protected function onUpdating(OrmResource $existing, array $fields): array
     {
-
-        try {
-
-            $tenants = new Tenants($this->rbacService);
-            $tenant_owner = $tenants->getOwnerId($existing->get('tenant', ''));
-
-        } catch (Exception) {
-            throw new UnexpectedException('Unable to update tenant user: Error validating tenant owner');
-        }
-
-        if (isset($fields['tenant'])) {
-
-            if ($existing->get('user') == $tenant_owner && $fields['tenant'] !== $existing->get('tenant')) {
-                throw new InvalidFieldException('Unable to update tenant user: Tenant owner cannot be removed');
-            }
-
-        }
-
-        if (isset($fields['user'])) {
-
-            if ($existing->get('user') == $tenant_owner && $fields['user'] !== $tenant_owner) {
-                throw new InvalidFieldException('Unable to update tenant user: Tenant owner cannot be removed');
-            }
-
-        }
-
         return $fields;
-
     }
 
     /**
@@ -251,7 +219,7 @@ class TenantUsers extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.updated', $resource, $previous, $fields);
+
     }
 
     /**
@@ -279,28 +247,11 @@ class TenantUsers extends RbacModel
     /**
      * Actions to perform before a resource is deleted.
      *
-     * - Ensure tenant owner is not removed from tenant
-     *
      * @param OrmResource $resource
      * @return void
-     * @throws InvalidRequestException
-     * @throws UnexpectedException
      */
     protected function onDeleting(OrmResource $resource): void
     {
-
-        try {
-
-            $tenants = new Tenants($this->rbacService);
-            $tenant_owner = $tenants->getOwnerId($resource->get('tenant', ''));
-
-        } catch (OrmServiceException) {
-            throw new UnexpectedException('Unable to delete tenant user: Error validating tenant owner');
-        }
-
-        if ($resource->get('user') == $tenant_owner) {
-            throw new InvalidRequestException('Unable to delete tenant user: Tenant owner cannot be removed');
-        }
 
     }
 
@@ -312,7 +263,7 @@ class TenantUsers extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.deleted', $resource);
+
     }
 
     /**
@@ -343,51 +294,50 @@ class TenantUsers extends RbacModel
 
     /*
      * |--------------------------------------------------------------------------
+     * | Traits
+     * |--------------------------------------------------------------------------
+     */
+
+    /**
+     * Trait: SoftDeletes
+     *
+     * @inheritDoc
+     */
+    protected function getDeletedAtField(): string
+    {
+        return 'deleted_at';
+    }
+
+    /*
+     * |--------------------------------------------------------------------------
      * | Model-specific
      * |--------------------------------------------------------------------------
      */
 
     /**
-     * Find tenant user by tenant and user ID.
+     * Find tenant role by tenant ID and name.
      *
      * Can be used with the SoftDeletes trait trashed filters.
      *
      * @param string $tenant_id
-     * @param string $user_id
+     * @param string $name
      * @return OrmResource
      * @throws DoesNotExistException
      * @throws UnexpectedException
      */
-    public function findByUserId(string $tenant_id, string $user_id): OrmResource
+    public function findByName(string $tenant_id, string $name): OrmResource
     {
 
-        $tenant_user_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenantId AND user = :userId", [
-            'tenantId' => $tenant_id,
-            'userId' => $user_id
+        $role_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
+            'tenant' => $tenant_id,
+            'name' => $name
         ]);
 
-        if (!$tenant_user_id) {
-            throw new DoesNotExistException('Unable to find tenant user: User does not exist');
+        if (!$role_id) {
+            throw new DoesNotExistException('Unable to find tenant role: Role does not exist');
         }
 
-        return $this->find($tenant_user_id);
-
-    }
-
-    /**
-     * Is user in tenant?
-     *
-     * @param string $tenant_id
-     * @param string $user_id
-     * @return bool
-     */
-    public function inTenant(string $tenant_id, string $user_id): bool
-    {
-
-        return $this->ormService->db->exists($this->table_name, [
-            'tenant' => $tenant_id,
-            'user' => $user_id
-        ]);
+        return $this->find($role_id);
 
     }
 

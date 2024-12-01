@@ -12,8 +12,8 @@ use Bayfront\BonesService\Rbac\Exceptions\Authentication\UnexpectedAuthenticatio
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDisabledException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserNotVerifiedException;
-use Bayfront\BonesService\Rbac\Models\UserMeta;
-use Bayfront\BonesService\Rbac\Models\Users;
+use Bayfront\BonesService\Rbac\Models\UserMetaModel;
+use Bayfront\BonesService\Rbac\Models\UsersModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\User;
 use Bayfront\JWT\Jwt;
@@ -24,15 +24,15 @@ class TokenAuthenticator
 {
 
     public RbacService $rbacService;
-    private UserMeta $userMeta;
-    private Users $users;
+    private UserMetaModel $userMetaModel;
+    private UsersModel $usersModel;
     private Jwt $jwt;
 
     public function __construct(RbacService $rbacService)
     {
         $this->rbacService = $rbacService;
-        $this->userMeta = new UserMeta($rbacService);
-        $this->users = new Users($rbacService);
+        $this->userMetaModel = new UserMetaModel($rbacService);
+        $this->usersModel = new UsersModel($rbacService);
         $this->jwt = new Jwt(App::getConfig('app.key'));
     }
 
@@ -103,7 +103,7 @@ class TokenAuthenticator
 
         } catch (TokenException) { // Token expired
 
-            $this->userMeta->deleteToken($user_id, $type);
+            $this->userMetaModel->deleteToken($user_id, $type);
 
             $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
             throw new TokenDoesNotExistException('Unable to authenticate token: Invalid claims');
@@ -123,7 +123,7 @@ class TokenAuthenticator
 
         if ($exp < time()) {
 
-            $this->userMeta->deleteToken($user_id, $type);
+            $this->userMetaModel->deleteToken($user_id, $type);
 
             $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
             throw new TokenDoesNotExistException('Unable to authenticate token: Token was expired');
@@ -151,7 +151,7 @@ class TokenAuthenticator
                  * - jti (user meta ID)
                  */
 
-                $meta = $this->userMeta->withProtectedPrefix()->find(Arr::get($decoded, 'payload.jti', ''));
+                $meta = $this->userMetaModel->withProtectedPrefix()->find(Arr::get($decoded, 'payload.jti', ''));
 
             } catch (DoesNotExistException) {
                 $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
@@ -167,7 +167,7 @@ class TokenAuthenticator
              * - sub (user ID)
              */
 
-            if ($meta->get('meta_key') !== $this->userMeta->getProtectedPrefix() . $meta_key
+            if ($meta->get('meta_key') !== $this->userMetaModel->getProtectedPrefix() . $meta_key
                 || $meta->get('user') !== Arr::get($decoded, 'payload.sub', '')) { // Default one to string so both non-existing do not match
 
                 $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
@@ -181,7 +181,7 @@ class TokenAuthenticator
 
             if (!$validator->isValid()) {
 
-                $this->userMeta->deleteToken($user_id, $type);
+                $this->userMetaModel->deleteToken($user_id, $type);
 
                 $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
                 throw new UnexpectedAuthenticationException('Unable to authenticate token: Invalid token format');
@@ -197,7 +197,7 @@ class TokenAuthenticator
 
             if (Arr::get($meta_value, 'exp') != Arr::get($decoded, 'payload.exp', '')) { // Default one to string so both non-existing do not match
 
-                $this->userMeta->deleteToken($user_id, $type);
+                $this->userMetaModel->deleteToken($user_id, $type);
 
                 $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
                 throw new TokenDoesNotExistException('Unable to authenticate token: Invalid token expiration');
@@ -225,10 +225,10 @@ class TokenAuthenticator
     {
 
         try {
-            $user_resource = $this->users->find($user_id);
+            $user_resource = $this->usersModel->find($user_id);
         } catch (DoesNotExistException) { // Token key exists, but user is soft-deleted
             $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
-            $this->userMeta->deleteAllTokens($user_id);
+            $this->userMetaModel->deleteAllTokens($user_id);
             throw new UserDoesNotExistException('Unable to authenticate token: User does not exist');
         } catch (UnexpectedException) {
             $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
@@ -240,7 +240,7 @@ class TokenAuthenticator
         // User is enabled
 
         if (!$user->isEnabled()) {
-            $this->userMeta->deleteAllTokens($user_id);
+            $this->userMetaModel->deleteAllTokens($user_id);
             $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
             throw new UserDisabledException('Unable to authenticate token: User is disabled');
         }
@@ -250,7 +250,7 @@ class TokenAuthenticator
         if ($this->rbacService->getConfig('user.require_verification', true) === true
             && $user->get('verified_at') === null) {
 
-            $this->userMeta->deleteAllTokens($user_id);
+            $this->userMetaModel->deleteAllTokens($user_id);
             $this->rbacService->ormService->events->doEvent('rbac.auth.fail.token');
             throw new UserNotVerifiedException('Unable to authenticate token: User is not verified');
 

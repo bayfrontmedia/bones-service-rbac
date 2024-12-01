@@ -2,21 +2,13 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
-use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
-use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant roles model.
- */
-class TenantRoles extends RbacModel
+class TenantUserRolesModel extends RbacModel
 {
-
-    use SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -27,7 +19,7 @@ class TenantRoles extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_ROLES);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USER_ROLES);
     }
 
     /**
@@ -62,7 +54,8 @@ class TenantRoles extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant' => Tenants::class
+        'tenant_user' => TenantUsersModel::class,
+        'role' => TenantRolesModel::class
     ];
 
     /**
@@ -73,9 +66,8 @@ class TenantRoles extends RbacModel
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant' => 'required|isString|lengthEquals:36',
-        'name' => 'required|isString|maxLength:255',
-        'description' => 'isString|maxLength:255'
+        'tenant_user' => 'required|isString|lengthEquals:36',
+        'role' => 'required|isString|lengthEquals:36'
     ];
 
     /**
@@ -88,8 +80,8 @@ class TenantRoles extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'tenant',
-            'name'
+            'tenant_user',
+            'role'
         ]
     ];
 
@@ -100,12 +92,10 @@ class TenantRoles extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'tenant',
-        'name',
-        'description',
+        'tenant_user',
+        'role',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -118,9 +108,8 @@ class TenantRoles extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'tenant',
-        'name',
-        'description'
+        'tenant_user',
+        'role'
     ];
 
     /**
@@ -297,51 +286,8 @@ class TenantRoles extends RbacModel
 
     /*
      * |--------------------------------------------------------------------------
-     * | Traits
-     * |--------------------------------------------------------------------------
-     */
-
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
-    /*
-     * |--------------------------------------------------------------------------
      * | Model-specific
      * |--------------------------------------------------------------------------
      */
-
-    /**
-     * Find tenant role by tenant ID and name.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
-     *
-     * @param string $tenant_id
-     * @param string $name
-     * @return OrmResource
-     * @throws DoesNotExistException
-     * @throws UnexpectedException
-     */
-    public function findByName(string $tenant_id, string $name): OrmResource
-    {
-
-        $role_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
-            'tenant' => $tenant_id,
-            'name' => $name
-        ]);
-
-        if (!$role_id) {
-            throw new DoesNotExistException('Unable to find tenant role: Role does not exist');
-        }
-
-        return $this->find($role_id);
-
-    }
 
 }
