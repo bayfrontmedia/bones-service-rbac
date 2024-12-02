@@ -65,16 +65,28 @@ class TenantMetaModel extends RbacModel
     ];
 
     /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'tenant',
+        'meta_key',
+        'meta_value'
+    ];
+
+    /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant' => 'required|isString|lengthEquals:36',
-        'meta_key' => 'required|isString|maxLength:255',
-        'meta_value' => 'required|maxLength:4000000000'
+        'tenant' => 'isString|lengthEquals:36',
+        'meta_key' => 'isString|maxLength:255',
+        'meta_value' => 'maxLength:4000000000'
     ];
 
     /**

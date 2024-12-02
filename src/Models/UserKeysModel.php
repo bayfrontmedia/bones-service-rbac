@@ -69,15 +69,26 @@ class UserKeysModel extends RbacModel
     ];
 
     /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'user',
+        'name'
+    ];
+
+    /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'user' => 'required|isString|lengthEquals:36',
-        'name' => 'required|isString|maxLength:255',
+        'user' => 'isString|lengthEquals:36',
+        'name' => 'isString|maxLength:255',
         'allowed_domains' => 'isArray',
         'allowed_ips' => 'isArray',
         'expires_at' => 'date:Y-m-d H:i:s'

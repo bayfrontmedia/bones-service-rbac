@@ -59,15 +59,26 @@ class TenantRolePermissionsModel extends RbacModel
     ];
 
     /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'role',
+        'permission'
+    ];
+
+    /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'role' => 'required|isString|lengthEquals:36',
-        'permission' => 'required|isString|lengthEquals:36'
+        'role' => 'isString|lengthEquals:36',
+        'permission' => 'isString|lengthEquals:36'
     ];
 
     /**

@@ -59,15 +59,26 @@ class TenantUserTeamsModel extends RbacModel
     ];
 
     /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'tenant_user',
+        'team'
+    ];
+
+    /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant_user' => 'required|isString|lengthEquals:36',
-        'team' => 'required|isString|lengthEquals:36'
+        'tenant_user' => 'isString|lengthEquals:36',
+        'team' => 'isString|lengthEquals:36'
     ];
 
     /**
