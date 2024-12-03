@@ -27,7 +27,7 @@ class EmailAuthenticator
      *
      * NOTE:
      * This should be used in conjunction with another authentication method,
-     * such as an MFA.
+     * such as a TOTP.
      * Because of this, the rbac.auth.success event is not executed.
      *
      * @param string $email

@@ -72,7 +72,6 @@ class CreateRbacServiceSchema implements MigrationInterface
             `password` varchar(255) NOT NULL,
             `salt` varchar(255) NOT NULL,
             `meta` JSON NULL DEFAULT NULL,
-            `mfa` JSON NULL DEFAULT NULL,
             `admin` tinyint(1) NOT NULL DEFAULT '0',
             `enabled` tinyint(1) NOT NULL DEFAULT '0',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP(),

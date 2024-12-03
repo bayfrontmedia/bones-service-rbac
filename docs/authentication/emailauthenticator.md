@@ -13,7 +13,7 @@ The `rbac.auth.fail.email` [event](../events.md) is executed on failure.
 
 NOTE:
 This should be used in conjunction with another authentication method,
-such as an [MFA](mfaauthenticator.md).
+such as a [TOTP](totpauthenticator.md).
 Because of this, the `rbac.auth.success` [event](../events.md) is never executed.
 
 **Parameters:**

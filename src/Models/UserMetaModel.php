@@ -703,7 +703,7 @@ class UserMetaModel extends RbacModel
     }
 
     /**
-     * Create password request, verifying MFA wait time has elapsed.
+     * Create password request, verifying TOTP wait time has elapsed.
      * Value is hashed using RbacService->createHash().
      *
      * @param string $user_id
@@ -721,9 +721,9 @@ class UserMetaModel extends RbacModel
             $existing = $this->getPasswordRequest($user_id);
 
             $now = time();
-            $mfa_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
+            $totp_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
 
-            if ($existing->getCreatedAt() > $now - ($mfa_wait * 60)) {
+            if ($existing->getCreatedAt() > $now - ($totp_wait * 60)) {
                 throw new AlreadyExistsException('Unable to create password request: Wait time not yet elapsed');
             }
 
@@ -797,7 +797,7 @@ class UserMetaModel extends RbacModel
     }
 
     /**
-     * Create user TOTP, verifying MFA wait time has elapsed.
+     * Create user TOTP, verifying TOTP wait time has elapsed.
      * Value is hashed using RbacService->createHash().
      *
      * @param string $user_id
@@ -815,9 +815,9 @@ class UserMetaModel extends RbacModel
             $existing = $this->getUserTotp($user_id);
 
             $now = time();
-            $mfa_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
+            $totp_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
 
-            if ($existing->getCreatedAt() > $now - ($mfa_wait * 60)) {
+            if ($existing->getCreatedAt() > $now - ($totp_wait * 60)) {
                 throw new AlreadyExistsException('Unable to create user TOTP: Wait time not yet elapsed');
             }
 

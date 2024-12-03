@@ -210,7 +210,7 @@ Quietly delete all expired access and refresh tokens.
 
 **Description:**
 
-Create password request, verifying MFA wait time has elapsed.
+Create password request, verifying TOTP wait time has elapsed.
 Value is hashed using [createHash](../rbacservice.md#createhash)
 
 **Parameters:**
@@ -275,15 +275,11 @@ Quietly hard-delete all expired password requests.
 
 - (void)
 
-
-
-
-
 ## createUserTotp
 
 **Description:**
 
-Create user TOTP, verifying MFA wait time has elapsed.
+Create user TOTP, verifying TOTP wait time has elapsed.
 Value is hashed using [createHash](../rbacservice.md#createhash)
 
 **Parameters:**

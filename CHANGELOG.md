@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `$required_fields` property to all models.
-- Added `EmailAuthenticator` class.
+- Added `EmailAuthenticator` and related events.
 - Added password request functions.
 - Added `Totp` class and migrated user MFA functions to TOTP.
 
@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renamed all models to include `Model` suffix.
 - Updated `rbac.user.mfa.created` event to pass the user's email as a parameter.
+
+### Removed
+
+- Removed `UserMfaAuthenticator` and related events.
+- Removed user key functions from `UsersModel` in favor of `userTotp` methods in `UserMetaModel`.
 
 ### Fixed
 

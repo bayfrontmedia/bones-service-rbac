@@ -23,9 +23,9 @@ return [
         'key' => [
             'max_mins' => 525600, // Max user key duration (in minutes), 0 for unlimited: 525600 = 365 days
         ],
-        'mfa' => [
-            'duration' => 15, // MFA validity duration (in minutes), 0 for unlimited
-            'wait' => 3, // Wait time (in minutes) to wait before creating a new MFA, or 0 to disable
+        'totp' => [
+            'duration' => 15, // TOTP validity duration (in minutes), 0 for unlimited
+            'wait' => 3, // Wait time (in minutes) to wait before creating a new TOTP, or 0 to disable
         ],
         'token' => [
             'revocable' => true, // Allow access tokens to be revocable? This requires a database query to validate each request
@@ -157,7 +157,6 @@ php bones rbac:seed --force
 
 To keep the database optimized, the following scheduled jobs are recommended:
 
-- Delete expired user MFA's using [deleteExpiredMfas](models/users.md#deleteexpiredmfas).
 - If user verification is required, delete unverified users using [deleteUnverified](models/users.md#deleteunverified).
 - [Tenant invitations](models/tenantinvitations.md) and [user keys](models/userkeys.md) are both prunable by the `expires_at` field,
 and should be pruned regularly.

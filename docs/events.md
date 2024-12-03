@@ -4,11 +4,11 @@ The following [events](https://github.com/bayfrontmedia/bones/blob/master/docs/s
 
 - `rbac.auth.success`: Executed on successful user [authentication](authentication/README.md) for all authenticators except for [EmailAuthenticator](authentication/emailauthenticator.md).
 A [User](user.md) instance is passed as a parameter.
-- `rbac.auth.fail.email`: Executed on unsuccessful [email authentication](authentication/emailauthenticator.md) attempt. The email address is passed as a parameter.
-- `rbac.auth.fail.mfa`: Executed on unsuccessful [MFA authentication](authentication/mfaauthenticator.md) attempt. The email address is passed as a parameter.
-- `rbac.auth.fail.password`: Executed on unsuccessful [password authentication](authentication/passwordauthenticator.md) attempt. The email address is passed as a parameter.
-- `rbac.auth.fail.token`: Executed on unsuccessful [token authentication](authentication/tokenauthenticator.md) attempt. No parameters are passed.
 - `rbac.auth.fail.key`: Executed on unsuccessful [user key authentication](authentication/userkeyauthenticator.md) attempt. No parameters are passed.
+- `rbac.auth.fail.token`: Executed on unsuccessful [token authentication](authentication/tokenauthenticator.md) attempt. No parameters are passed.
+- `rbac.auth.fail.email`: Executed on unsuccessful [email authentication](authentication/emailauthenticator.md) attempt. The email address is passed as a parameter.
+- `rbac.auth.fail.password`: Executed on unsuccessful [password authentication](authentication/passwordauthenticator.md) attempt. The email address is passed as a parameter.
+- `rbac.auth.fail.totp`: Executed on unsuccessful [TOTP authentication](authentication/totpauthenticator.md) attempt. The email address is passed as a parameter.
 - `rbac.tenant.invitation.created`: Executed on creation of a [tenant invitation](models/tenantinvitations.md). 
 An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance representing the created invitation is passed as a parameter. 
 - `rbac.tenant.invitation.accepted`: Executed when a [tenant invitation](models/tenantinvitations.md#accept) is accepted.
