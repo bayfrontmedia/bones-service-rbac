@@ -31,13 +31,14 @@ class EmailAuthenticator
      * Because of this, the rbac.auth.success event is not executed.
      *
      * @param string $email
+     * @param bool $check_verified (Check if user is verified when require verification is enabled)
      * @return User
      * @throws UnexpectedAuthenticationException
      * @throws UserDisabledException
      * @throws UserDoesNotExistException
      * @throws UserNotVerifiedException
      */
-    public function authenticate(string $email): User
+    public function authenticate(string $email, bool $check_verified = true): User
     {
 
         $usersModel = new UsersModel($this->rbacService);
@@ -63,10 +64,14 @@ class EmailAuthenticator
 
         // Check user verification
 
-        if ($this->rbacService->getConfig('user.require_verification', true) === true
-            && $user->get('verified_at') === null) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.email', $email);
-            throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');
+        if ($check_verified === true) {
+
+            if ($this->rbacService->getConfig('user.require_verification', true) === true
+                && $user->get('verified_at') === null) {
+                $this->rbacService->ormService->events->doEvent('rbac.auth.fail.email', $email);
+                throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');
+            }
+
         }
 
         return $user;

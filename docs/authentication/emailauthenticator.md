@@ -19,6 +19,7 @@ Because of this, the `rbac.auth.success` [event](../events.md) is never executed
 **Parameters:**
 
 - `$email` (string)
+- `$check_verified = true` (bool): Check if user is verified when require verification is enabled
 
 **Returns:**
 
