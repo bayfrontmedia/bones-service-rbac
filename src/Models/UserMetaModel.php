@@ -751,7 +751,7 @@ class UserMetaModel extends RbacModel
             throw new DoesNotExistException('Unable to get password request: Password request invalid or expired');
         }
 
-        return $request;
+        return json_decode($request, true);
 
     }
 
