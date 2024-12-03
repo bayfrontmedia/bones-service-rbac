@@ -4,8 +4,10 @@ namespace Bayfront\BonesService\Rbac\Models;
 
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Application\Utilities\App;
+use Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
+use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
@@ -15,6 +17,7 @@ use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
 use Bayfront\JWT\Jwt;
 use Bayfront\JWT\TokenException;
 use Bayfront\SimplePdo\Query;
+use Bayfront\StringHelpers\Str;
 use Bayfront\Validator\Rules\IsJson;
 
 class UserMetaModel extends RbacModel
@@ -582,6 +585,210 @@ class UserMetaModel extends RbacModel
 
             if (Arr::get($meta_value, 'exp', 0) < $now) {
                 $delete_ids[] = "'" . $token['id'] . "'";
+            }
+
+        }
+
+        if (!empty($delete_ids)) {
+            $this->rbacService->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
+        }
+
+    }
+    
+    // ------------------------- MFAs -------------------------
+
+    // MFA types
+    public const MFA_TYPE_NONZERO = 'nonzero';
+    public const MFA_TYPE_ALPHA = 'alpha';
+    public const MFA_TYPE_NUMERIC = 'numeric';
+    public const MFA_TYPE_ALPHANUMERIC = 'alphanumeric';
+    public const MFA_TYPE_ALL = 'all';
+
+    /**
+     * Create MFA array for MFA and password requests.
+     *
+     * @param int $length
+     * @param string $type
+     * @return array (Keys: created_at, expires_at, value)
+     */
+    private function createMfaArray(int $length = 6, string $type = self::MFA_TYPE_NUMERIC): array
+    {
+
+        $now = time();
+
+        if ($this->rbacService->getConfig('user.mfa.duration', 15) == 0) {
+            $expires_at = 0;
+        } else {
+            $expires_at = $now + ($this->rbacService->getConfig('user.mfa.duration', 15) * 60);
+        }
+
+        return [
+            'created_at' => $now,
+            'expires_at' => $expires_at,
+            'value' => Str::random($length, $type)
+        ];
+
+    }
+
+    /**
+     * Is MFA array valid format and not expired?
+     *
+     * @param mixed $meta_value
+     * @return bool
+     */
+    private function mfaIsValid(mixed $meta_value): bool
+    {
+
+        // Validate format
+
+        $json = new IsJson($meta_value);
+
+        if (!$json->isValid()) {
+            return false;
+        }
+
+        $meta_value = json_decode($meta_value, true);
+
+        if (!isset($meta_value['created_at']) || !isset($meta_value['expires_at']) || !isset($meta_value['value'])) {
+            return false;
+        }
+
+        // Validate expired
+
+        if ((int)Arr::get($meta_value, 'expires_at', 0) !== 0 && (int)Arr::get($meta_value, 'expires_at', 0) < time()) {
+            return false;
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Create password request, verifying MFA wait time has elapsed.
+     * Value is hashed using RbacService->createHash().
+     *
+     * @param string $user_id
+     * @param int $length
+     * @param string $type (Any MFA_TYPE_* constant)
+     * @return array (Keys: created_at, expires_at, value)
+     * @throws AlreadyExistsException
+     * @throws UnexpectedException
+     */
+    public function createPasswordRequest(string $user_id, int $length = 24, string $type = self::MFA_TYPE_ALPHANUMERIC): array
+    {
+
+        $existing = null;
+
+        try {
+            $existing = $this->getPasswordRequest($user_id);
+        } catch (DoesNotExistException) {
+            // Do nothing;
+        }
+
+        if (is_array($existing)) { // Check wait time
+
+            $now = time();
+            $mfa_wait = (int)$this->rbacService->getConfig('user.mfa.wait', 3);
+
+            if (isset($existing['created_at']) && $mfa_wait > 0) {
+
+                if ((int)$existing['created_at'] > $now - ($mfa_wait * 60)) {
+                    throw new AlreadyExistsException('Unable to create password request: Wait time not yet elapsed');
+                }
+
+            }
+
+        }
+
+        $mfa = $this->createMfaArray($length, $type);
+
+        try {
+
+            $this->withProtectedPrefix()->upsert([
+                'user' => $user_id,
+                'meta_key' => $this->getProtectedPrefix() . 'password_request',
+                'meta_value' => json_encode([
+                    'created_at' => Arr::get($mfa, 'created_at', 0),
+                    'expires_at' => Arr::get($mfa, 'expires_at', time()),
+                    'value' => $this->rbacService->createHash(Arr::get($mfa, 'value', ''))
+                ])
+            ]);
+
+        } catch (OrmServiceException) {
+            throw new UnexpectedException('Unable to create password request: Error saving request');
+        }
+
+        $this->rbacService->ormService->events->doEvent('rbac.user.password.request', $user_id, $mfa);
+
+        return $mfa;
+
+    }
+
+    /**
+     * Get non-deleted password request, or quietly delete if invalid or expired.
+     * Value can be verified using RbacService->hashMatches().
+     *
+     * @param string $user_id
+     * @return array (Keys: created_at, expires_at, value)
+     * @throws DoesNotExistException
+     */
+    public function getPasswordRequest(string $user_id): array
+    {
+
+        $deleted_at_field = $this->getDeletedAtField();
+
+        $request = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
+            'userId' => $user_id,
+            'metaKey' => $this->getProtectedPrefix() . 'password_request'
+        ]);
+
+        if (!$request) {
+            throw new DoesNotExistException('Unable to get password request: Password request does not exist');
+        }
+
+        if (!$this->mfaIsValid($request)) {
+            $this->deletePasswordRequest($user_id);
+            throw new DoesNotExistException('Unable to get password request: Password request invalid or expired');
+        }
+
+        return $request;
+
+    }
+
+    /**
+     * Quietly hard-delete password request, if existing.
+     *
+     * @param string $user_id
+     * @return bool
+     */
+    public function deletePasswordRequest(string $user_id): bool
+    {
+        return $this->ormService->db->delete($this->table_name, [
+            'user' => $user_id,
+            'meta_key' => $this->getProtectedPrefix() . 'password_request'
+        ]);
+    }
+
+    /**
+     * Quietly hard-delete all expired password requests.
+     *
+     * @return void
+     */
+    public function deleteExpiredPasswordRequests(): void
+    {
+
+        $table = $this->getTableName();
+
+        $requests = $this->rbacService->ormService->db->select("SELECT id, meta_value FROM $table WHERE meta_key = :metaKey", [
+            'metaKey' => $this->getProtectedPrefix() . 'password_request'
+        ]);
+
+        $delete_ids = [];
+
+        foreach ($requests as $request) {
+
+            if (!$this->mfaIsValid($request['meta_value'])) {
+                $delete_ids[] = $request['id'];
             }
 
         }

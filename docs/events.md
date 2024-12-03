@@ -32,6 +32,8 @@ an `OrmResource` representing the pre-updated resource, and an array representin
 - `rbac.user.key.deleted`: Executed when a [user key](models/userkeys.md) is deleted.
 An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance representing the pre-deleted resource
 is passed as a parameter.
+- `rbac.user.password.request`: Executed on creation of a [password request](models/usermeta.md#createpasswordrequest).
+The user ID and created password request array are passed as parameters.
 - `rbac.user.password.updated`: Executed when a [user's password](models/users.md) is updated.
 An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the updated user is passed as a parameter.
 - `rbac.user.verified`: Executed when a [user is verified](models/users.md#verify). The user's email is passed as a parameter.

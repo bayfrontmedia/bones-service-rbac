@@ -8,6 +8,8 @@ Methods include:
 
 - [getConfig](#getconfig)
 - [getTableName](#gettablename)
+- [createHash](#createhash)
+- [hashMatches](#hashmatches)
 
 ## getConfig
 
@@ -38,5 +40,33 @@ Get prefixed table name.
 
 - (string)
 
+## createHash
+
+**Description:**
+
+Create hash from raw value.
+
+**Parameters:**
+
+- `$raw_value` (string)
+
+**Returns:**
+
+- (string)
+
+## hashMatches
+
+**Description:**
+
+Does hash match raw value?
+
+**Parameters:**
+
+- `$hash` (string)
+- `$raw_value` (string)
+
+**Returns:**
+
+- (bool)
 
 

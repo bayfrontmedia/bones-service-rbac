@@ -43,6 +43,10 @@ Model-specific methods include:
 - [deleteToken](#deletetoken)
 - [deleteAllTokens](#deletealltokens)
 - [deleteExpiredTokens](#deleteexpiredtokens)
+- [createPasswordRequest](#createpasswordrequest)
+- [getPasswordRequest](#getpasswordrequest)
+- [deletePasswordRequest](#deletepasswordrequest)
+- [deleteExpiredPasswordRequests](#deleteexpiredpasswordrequests)
 
 ## withProtectedPrefix
 
@@ -189,6 +193,75 @@ Quietly hard-delete access and refresh tokens for user.
 **Description:**
 
 Quietly delete all expired access and refresh tokens.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (void)
+
+## createPasswordRequest
+
+**Description:**
+
+Create password request, verifying MFA wait time has elapsed.
+Value is hashed using [createHash](../rbacservice.md#createhash)
+
+**Parameters:**
+
+- `$user_id` (string)
+- `$length = 24` (int)
+- `$type = self::MFA_TYPE_ALPHANUMERIC` (string): Any `MFA_TYPE_*` constant
+
+**Returns:**
+
+- (array): Keys: `created_at`, `expires_at`, `value`
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException`
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## getPasswordRequest
+
+**Description:**
+
+Get non-deleted password request, or quietly delete if invalid or expired.
+Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- (array): Keys: `created_at`, `expires_at`, `value`
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
+
+## deletePasswordRequest
+
+**Description:**
+
+Quietly hard-delete password request, if existing.
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- (bool)
+
+## deleteExpiredPasswordRequests
+
+**Description:**
+
+Quietly hard-delete all expired password requests.
 
 **Parameters:**
 
