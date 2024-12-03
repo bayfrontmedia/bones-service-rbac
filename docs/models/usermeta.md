@@ -47,6 +47,10 @@ Model-specific methods include:
 - [getPasswordRequest](#getpasswordrequest)
 - [deletePasswordRequest](#deletepasswordrequest)
 - [deleteExpiredPasswordRequests](#deleteexpiredpasswordrequests)
+- [createUserTotp](#createusertotp)
+- [getUserTotp](#getusertotp)
+- [deleteUserTotp](#deleteusertotp)
+- [deleteExpiredUserTotps](#deleteexpiredusertotps)
 
 ## withProtectedPrefix
 
@@ -212,12 +216,12 @@ Value is hashed using [createHash](../rbacservice.md#createhash)
 **Parameters:**
 
 - `$user_id` (string)
-- `$length = 24` (int)
-- `$type = self::MFA_TYPE_ALPHANUMERIC` (string): Any `MFA_TYPE_*` constant
+- `$length` (int)
+- `$type` (string): Any [RbacService](../rbacservice.md#createtotp) `TOTP_TYPE_*` constant
 
 **Returns:**
 
-- (array): Keys: `created_at`, `expires_at`, `value`
+- [Totp](../totp.md)
 
 **Throws:**
 
@@ -237,7 +241,7 @@ Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
 
 **Returns:**
 
-- (array): Keys: `created_at`, `expires_at`, `value`
+- [Totp](../totp.md)
 
 **Throws:**
 
@@ -262,6 +266,79 @@ Quietly hard-delete password request, if existing.
 **Description:**
 
 Quietly hard-delete all expired password requests.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (void)
+
+
+
+
+
+## createUserTotp
+
+**Description:**
+
+Create user TOTP, verifying MFA wait time has elapsed.
+Value is hashed using [createHash](../rbacservice.md#createhash)
+
+**Parameters:**
+
+- `$user_id` (string)
+- `$length` (int)
+- `$type` (string): Any [RbacService](../rbacservice.md#createtotp) `TOTP_TYPE_*` constant
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException`
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## getUserTotp
+
+**Description:**
+
+Get non-deleted user TOTP, or quietly delete if invalid or expired.
+Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
+
+## deleteUserTotp
+
+**Description:**
+
+Quietly hard-delete user TOTP, if existing.
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- (bool)
+
+## deleteExpiredUserTotps
+
+**Description:**
+
+Quietly hard-delete all expired user TOTP's.
 
 **Parameters:**
 

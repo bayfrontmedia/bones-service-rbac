@@ -13,11 +13,11 @@ use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
+use Bayfront\BonesService\Rbac\Totp;
 use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
 use Bayfront\JWT\Jwt;
 use Bayfront\JWT\TokenException;
 use Bayfront\SimplePdo\Query;
-use Bayfront\StringHelpers\Str;
 use Bayfront\Validator\Rules\IsJson;
 
 class UserMetaModel extends RbacModel
@@ -595,48 +595,52 @@ class UserMetaModel extends RbacModel
 
     }
     
-    // ------------------------- MFAs -------------------------
-
-    // MFA types
-    public const MFA_TYPE_NONZERO = 'nonzero';
-    public const MFA_TYPE_ALPHA = 'alpha';
-    public const MFA_TYPE_NUMERIC = 'numeric';
-    public const MFA_TYPE_ALPHANUMERIC = 'alphanumeric';
-    public const MFA_TYPE_ALL = 'all';
+    // ------------------------- TOTPs -------------------------
 
     /**
-     * Create MFA array for MFA and password requests.
+     * Create TOTP and save with hashed value.
+     * Returns TOTP with raw value.
      *
+     * @param string $user_id
      * @param int $length
      * @param string $type
-     * @return array (Keys: created_at, expires_at, value)
+     * @param string $meta_key
+     * @return Totp
+     * @throws UnexpectedException
      */
-    private function createMfaArray(int $length = 6, string $type = self::MFA_TYPE_NUMERIC): array
+    private function createAndSaveTotp(string $user_id, int $length, string $type, string $meta_key): Totp
     {
 
-        $now = time();
+        $totp = $this->rbacService->createTotp($this->rbacService->getConfig('user.totp.duration'), $length, $type);
 
-        if ($this->rbacService->getConfig('user.mfa.duration', 15) == 0) {
-            $expires_at = 0;
-        } else {
-            $expires_at = $now + ($this->rbacService->getConfig('user.mfa.duration', 15) * 60);
+        try {
+
+            $this->withProtectedPrefix()->upsert([
+                'user' => $user_id,
+                'meta_key' => $meta_key,
+                'meta_value' => json_encode([
+                    'created_at' => $totp->getCreatedAt(),
+                    'expires_at' => $totp->getExpiresAt(),
+                    'value' => $this->rbacService->createHash($totp->getValue())
+                ])
+            ]);
+
+        } catch (OrmServiceException) {
+            throw new UnexpectedException('Unable to create TOTP: Error upserting value');
         }
 
-        return [
-            'created_at' => $now,
-            'expires_at' => $expires_at,
-            'value' => Str::random($length, $type)
-        ];
+        return $totp;
 
     }
 
     /**
-     * Is MFA array valid format and not expired?
+     * Get non-expired TOTP from JSON-encoded meta value.
      *
      * @param mixed $meta_value
-     * @return bool
+     * @return Totp
+     * @throws OrmServiceException
      */
-    private function mfaIsValid(mixed $meta_value): bool
+    private function getTotpFromJson(mixed $meta_value): Totp
     {
 
         // Validate format
@@ -644,22 +648,57 @@ class UserMetaModel extends RbacModel
         $json = new IsJson($meta_value);
 
         if (!$json->isValid()) {
-            return false;
+            throw new OrmServiceException('Unable to get TOTP: Invalid format');
         }
 
         $meta_value = json_decode($meta_value, true);
 
         if (!isset($meta_value['created_at']) || !isset($meta_value['expires_at']) || !isset($meta_value['value'])) {
-            return false;
+            throw new OrmServiceException('Unable to get TOTP: Invalid or missing key(s)');
         }
+
+        $totp = new Totp($meta_value);
 
         // Validate expired
 
-        if ((int)Arr::get($meta_value, 'expires_at', 0) !== 0 && (int)Arr::get($meta_value, 'expires_at', 0) < time()) {
-            return false;
+        if ($this->rbacService->totpIsExpired($totp)) {
+            throw new OrmServiceException('Unable to get TOTP: TOTP is expired');
         }
 
-        return true;
+        return $totp;
+
+    }
+
+    /**
+     * Delete expired TOTP's.
+     *
+     * @param string $meta_key
+     * @return void
+     */
+    private function deleteExpiredTotps(string $meta_key): void
+    {
+
+        $table = $this->getTableName();
+
+        $requests = $this->rbacService->ormService->db->select("SELECT id, meta_value FROM $table WHERE meta_key = :metaKey", [
+            'metaKey' => $meta_key
+        ]);
+
+        $delete_ids = [];
+
+        foreach ($requests as $request) {
+
+            try {
+                $this->getTotpFromJson($request['meta_value']);
+            } catch (OrmServiceException) {
+                $delete_ids[] = $request['id'];
+            }
+
+        }
+
+        if (!empty($delete_ids)) {
+            $this->rbacService->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
+        }
 
     }
 
@@ -669,58 +708,34 @@ class UserMetaModel extends RbacModel
      *
      * @param string $user_id
      * @param int $length
-     * @param string $type (Any MFA_TYPE_* constant)
-     * @return array (Keys: created_at, expires_at, value)
+     * @param string $type (Any RbacService TOTP_TYPE_* constant)
+     * @return Totp
      * @throws AlreadyExistsException
      * @throws UnexpectedException
      */
-    public function createPasswordRequest(string $user_id, int $length = 24, string $type = self::MFA_TYPE_ALPHANUMERIC): array
+    public function createPasswordRequest(string $user_id, int $length, string $type): Totp
     {
 
-        $existing = null;
-
         try {
+
             $existing = $this->getPasswordRequest($user_id);
+
+            $now = time();
+            $mfa_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
+
+            if ($existing->getCreatedAt() > $now - ($mfa_wait * 60)) {
+                throw new AlreadyExistsException('Unable to create password request: Wait time not yet elapsed');
+            }
+
         } catch (DoesNotExistException) {
             // Do nothing;
         }
 
-        if (is_array($existing)) { // Check wait time
+        $totp = $this->createAndSaveTotp($user_id, $length, $type, $this->getProtectedPrefix() . 'password_request');
 
-            $now = time();
-            $mfa_wait = (int)$this->rbacService->getConfig('user.mfa.wait', 3);
+        $this->rbacService->ormService->events->doEvent('rbac.user.password.request', $user_id, $totp);
 
-            if (isset($existing['created_at']) && $mfa_wait > 0) {
-
-                if ((int)$existing['created_at'] > $now - ($mfa_wait * 60)) {
-                    throw new AlreadyExistsException('Unable to create password request: Wait time not yet elapsed');
-                }
-
-            }
-
-        }
-
-        $mfa = $this->createMfaArray($length, $type);
-
-        try {
-
-            $this->withProtectedPrefix()->upsert([
-                'user' => $user_id,
-                'meta_key' => $this->getProtectedPrefix() . 'password_request',
-                'meta_value' => json_encode([
-                    'created_at' => Arr::get($mfa, 'created_at', 0),
-                    'expires_at' => Arr::get($mfa, 'expires_at', time()),
-                    'value' => $this->rbacService->createHash(Arr::get($mfa, 'value', ''))
-                ])
-            ]);
-
-        } catch (OrmServiceException) {
-            throw new UnexpectedException('Unable to create password request: Error saving request');
-        }
-
-        $this->rbacService->ormService->events->doEvent('rbac.user.password.request', $user_id, $mfa);
-
-        return $mfa;
+        return $totp;
 
     }
 
@@ -729,10 +744,10 @@ class UserMetaModel extends RbacModel
      * Value can be verified using RbacService->hashMatches().
      *
      * @param string $user_id
-     * @return array (Keys: created_at, expires_at, value)
+     * @return Totp
      * @throws DoesNotExistException
      */
-    public function getPasswordRequest(string $user_id): array
+    public function getPasswordRequest(string $user_id): Totp
     {
 
         $deleted_at_field = $this->getDeletedAtField();
@@ -746,12 +761,14 @@ class UserMetaModel extends RbacModel
             throw new DoesNotExistException('Unable to get password request: Password request does not exist');
         }
 
-        if (!$this->mfaIsValid($request)) {
+        try {
+            $totp = $this->getTotpFromJson($request['meta_value']);
+        } catch (OrmServiceException) {
             $this->deletePasswordRequest($user_id);
-            throw new DoesNotExistException('Unable to get password request: Password request invalid or expired');
+            throw new DoesNotExistException('Unable to get password request: Password request is invalid or expired');
         }
 
-        return json_decode($request, true);
+        return $totp;
 
     }
 
@@ -776,27 +793,101 @@ class UserMetaModel extends RbacModel
      */
     public function deleteExpiredPasswordRequests(): void
     {
+        $this->deleteExpiredTotps($this->getProtectedPrefix() . 'password_request');
+    }
 
-        $table = $this->getTableName();
+    /**
+     * Create user TOTP, verifying MFA wait time has elapsed.
+     * Value is hashed using RbacService->createHash().
+     *
+     * @param string $user_id
+     * @param int $length
+     * @param string $type (Any RbacService TOTP_TYPE_* constant)
+     * @return Totp
+     * @throws AlreadyExistsException
+     * @throws UnexpectedException
+     */
+    public function createUserTotp(string $user_id, int $length, string $type): Totp
+    {
 
-        $requests = $this->rbacService->ormService->db->select("SELECT id, meta_value FROM $table WHERE meta_key = :metaKey", [
-            'metaKey' => $this->getProtectedPrefix() . 'password_request'
-        ]);
+        try {
 
-        $delete_ids = [];
+            $existing = $this->getUserTotp($user_id);
 
-        foreach ($requests as $request) {
+            $now = time();
+            $mfa_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
 
-            if (!$this->mfaIsValid($request['meta_value'])) {
-                $delete_ids[] = $request['id'];
+            if ($existing->getCreatedAt() > $now - ($mfa_wait * 60)) {
+                throw new AlreadyExistsException('Unable to create user TOTP: Wait time not yet elapsed');
             }
 
+        } catch (DoesNotExistException) {
+            // Do nothing;
         }
 
-        if (!empty($delete_ids)) {
-            $this->rbacService->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
+        $totp = $this->createAndSaveTotp($user_id, $length, $type, $this->getProtectedPrefix() . 'totp');
+
+        $this->rbacService->ormService->events->doEvent('rbac.user.totp.created', $user_id, $totp);
+
+        return $totp;
+
+    }
+
+    /**
+     * Get non-deleted user TOTP, or quietly delete if invalid or expired.
+     * Value can be verified using RbacService->hashMatches().
+     *
+     * @param string $user_id
+     * @return Totp
+     * @throws DoesNotExistException
+     */
+    public function getUserTotp(string $user_id): Totp
+    {
+
+        $deleted_at_field = $this->getDeletedAtField();
+
+        $user_totp = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
+            'userId' => $user_id,
+            'metaKey' => $this->getProtectedPrefix() . 'totp'
+        ]);
+
+        if (!$user_totp) {
+            throw new DoesNotExistException('Unable to get user TOTP: User TOTP does not exist');
         }
 
+        try {
+            $totp = $this->getTotpFromJson($user_totp['meta_value']);
+        } catch (OrmServiceException) {
+            $this->deleteUserTotp($user_id);
+            throw new DoesNotExistException('Unable to get user TOTP: User TOTP is invalid or expired');
+        }
+
+        return $totp;
+
+    }
+
+    /**
+     * Quietly hard-delete user TOTP, if existing.
+     *
+     * @param string $user_id
+     * @return bool
+     */
+    public function deleteUserTotp(string $user_id): bool
+    {
+        return $this->ormService->db->delete($this->table_name, [
+            'user' => $user_id,
+            'meta_key' => $this->getProtectedPrefix() . 'totp'
+        ]);
+    }
+
+    /**
+     * Quietly hard-delete all expired user TOTP's.
+     *
+     * @return void
+     */
+    public function deleteExpiredUserTotps(): void
+    {
+        $this->deleteExpiredTotps($this->getProtectedPrefix() . 'totp');
     }
 
 }

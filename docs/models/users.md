@@ -109,7 +109,7 @@ Soft-delete all unverified users created before timestamp.
 
 Create MFA for non-deleted user, verifying MFA wait time has elapsed.
 
-This method utilizes the `user.mfa.wait` and `user.mfa.duration` [config values](../setup.md#configuration).
+This method utilizes the `user.totp.wait` and `user.totp.duration` [config values](../setup.md#configuration).
 The MFA value is returned once when the resource is created. If the value is misplaced, a new MFA must be created.
 
 The `rbac.user.mfa.created` [event](../events.md) is executed on successful creation.

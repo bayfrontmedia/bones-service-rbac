@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `$required_fields` property to all models.
 - Added `EmailAuthenticator` class.
+- Added password request functions.
+- Added `Totp` class and migrated user MFA functions to TOTP.
 
 ### Changed
 

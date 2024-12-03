@@ -162,5 +162,5 @@ To keep the database optimized, the following scheduled jobs are recommended:
 - [Tenant invitations](models/tenantinvitations.md) and [user keys](models/userkeys.md) are both prunable by the `expires_at` field,
 and should be pruned regularly.
 - Delete any expired access and refresh tokens using [deleteExpiredTokens](models/usermeta.md#deleteexpiredtokens).
-- Delete any expired password requests using [deleteExpiredPasswordRequests](models/usermeta.md#deleteexpiredpasswordrequests).
+- Delete any expired TOTP's using [deleteExpiredPasswordRequests](models/usermeta.md#deleteexpiredpasswordrequests) and [deleteExpiredUserTotps](models/usermeta.md#deleteexpiredusertotps).
 - Other soft-deleted resources may need to be permanently deleted using the [purgeTrashed](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md#purgetrashed) method as needed.

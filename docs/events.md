@@ -33,10 +33,9 @@ an `OrmResource` representing the pre-updated resource, and an array representin
 An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance representing the pre-deleted resource
 is passed as a parameter.
 - `rbac.user.password.request`: Executed on creation of a [password request](models/usermeta.md#createpasswordrequest).
-The user ID and created password request array are passed as parameters.
+The user ID and [Totp](totp.md) instance are passed as parameters.
+- `rbac.user.totp.created`: Executed when a [user TOTP](models/usermeta.md#createusertotp) is created.
+  The user ID and [Totp](totp.md) instance are passed as parameters.
 - `rbac.user.password.updated`: Executed when a [user's password](models/users.md) is updated.
 An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the updated user is passed as a parameter.
 - `rbac.user.verified`: Executed when a [user is verified](models/users.md#verify). The user's email is passed as a parameter.
-- `rbac.user.mfa.created`: Executed when a [user MFA](models/users.md#createmfa) is created.
-The user's email and an array with the keys `created_at`, `expires_at` and `value` are passed as parameters. 
-User MFA verified events can take place at the app-level.

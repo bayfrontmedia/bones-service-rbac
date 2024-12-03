@@ -506,7 +506,7 @@ class UsersModel extends RbacModel
 
         $now = time();
 
-        $mfa_wait = (int)$this->rbacService->getConfig('user.mfa.wait', 3);
+        $mfa_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
 
         if (isset($mfa['created_at']) && $mfa_wait > 0) {
 
@@ -516,10 +516,10 @@ class UsersModel extends RbacModel
 
         }
 
-        if ($this->rbacService->getConfig('user.mfa.duration', 15) == 0) {
+        if ($this->rbacService->getConfig('user.totp.duration', 15) == 0) {
             $expires_at = 0;
         } else {
-            $expires_at = $now + ($this->rbacService->getConfig('user.mfa.duration', 15) * 60);
+            $expires_at = $now + ($this->rbacService->getConfig('user.totp.duration', 15) * 60);
         }
 
         $mfa_raw = [
@@ -542,7 +542,7 @@ class UsersModel extends RbacModel
             throw new DoesNotExistException('Unable to create user MFA: User does not exist');
         }
 
-        $this->rbacService->ormService->events->doEvent('rbac.user.mfa.created', $email, $mfa_raw);
+        $this->rbacService->ormService->events->doEvent('rbac.user.totp.created', $email, $mfa_raw);
 
         return $mfa_raw;
 
