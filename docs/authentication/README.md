@@ -20,6 +20,7 @@ User permissions can be calculated using the [User](../user.md) class.
 
 ## Authentication methods
 
+- [EmailAuthenticator](emailauthenticator.md)
 - [MfaAuthenticator](mfaauthenticator.md)
 - [PasswordAuthenticator](passwordauthenticator.md)
 - [TokenAuthenticator](tokenauthenticator.md)

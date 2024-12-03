@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `$required_fields` property to all models.
+- Added `EmailAuthenticator` class.
 
 ### Changed
 
