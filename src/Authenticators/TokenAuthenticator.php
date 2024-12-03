@@ -247,7 +247,7 @@ class TokenAuthenticator
 
         // Check user verification
 
-        if ($this->rbacService->getConfig('user.require_verification', true) === true
+        if ($this->rbacService->getConfig('user.verification.require', true) === true
             && $user->get('verified_at') === null) {
 
             $this->userMetaModel->deleteAllTokens($user_id);

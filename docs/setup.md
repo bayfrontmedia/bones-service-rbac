@@ -19,7 +19,11 @@ return [
     'invitation_duration' => 10080, // Max tenant invitation duration (in minutes), 0 for unlimited: 10080 = 7 days
     'protected_prefix' => '_app-', // Protected column prefix
     'user' => [
-        'require_verification' => true, // Require user account verification
+       'verification' => [
+            'require' => true, // Require user account verification
+            'duration' => 15, // Verification validity duration (in minutes), 0 for unlimited
+            'wait' => 3 // Wait time (in minutes) to wait before creating a new verification, or 0 to disable
+        ],
         'key' => [
             'max_mins' => 525600, // Max user key duration (in minutes), 0 for unlimited: 525600 = 365 days
         ],

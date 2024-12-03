@@ -66,7 +66,7 @@ class EmailAuthenticator
 
         if ($check_verified === true) {
 
-            if ($this->rbacService->getConfig('user.require_verification', true) === true
+            if ($this->rbacService->getConfig('user.verification.require', true) === true
                 && $user->get('verified_at') === null) {
                 $this->rbacService->ormService->events->doEvent('rbac.auth.fail.email', $email);
                 throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');

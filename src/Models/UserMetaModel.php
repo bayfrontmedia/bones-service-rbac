@@ -890,4 +890,98 @@ class UserMetaModel extends RbacModel
         $this->deleteExpiredTotps($this->getProtectedPrefix() . 'totp');
     }
 
+    /**
+     * Create user verification, verifying TOTP wait time has elapsed.
+     * Value is hashed using RbacService->createHash().
+     *
+     * @param string $user_id
+     * @param int $length
+     * @param string $type (Any RbacService TOTP_TYPE_* constant)
+     * @return Totp
+     * @throws AlreadyExistsException
+     * @throws UnexpectedException
+     */
+    public function createUserVerification(string $user_id, int $length, string $type): Totp
+    {
+
+        try {
+
+            $existing = $this->getUserVerification($user_id);
+
+            $now = time();
+            $totp_wait = (int)$this->rbacService->getConfig('user.verification.wait', 3);
+
+            if ($existing->getCreatedAt() > $now - ($totp_wait * 60)) {
+                throw new AlreadyExistsException('Unable to create user TOTP: Wait time not yet elapsed');
+            }
+
+        } catch (DoesNotExistException) {
+            // Do nothing;
+        }
+
+        $totp = $this->createAndSaveTotp($user_id, $length, $type, $this->getProtectedPrefix() . 'verification');
+
+        $this->rbacService->ormService->events->doEvent('rbac.user.verification.request', $user_id, $totp);
+
+        return $totp;
+
+    }
+
+    /**
+     * Get non-deleted user verification, or quietly delete if invalid or expired.
+     * Value can be verified using RbacService->hashMatches().
+     *
+     * @param string $user_id
+     * @return Totp
+     * @throws DoesNotExistException
+     */
+    public function getUserVerification(string $user_id): Totp
+    {
+
+        $deleted_at_field = $this->getDeletedAtField();
+
+        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
+            'userId' => $user_id,
+            'metaKey' => $this->getProtectedPrefix() . 'verification'
+        ]);
+
+        if (!$meta_value) {
+            throw new DoesNotExistException('Unable to get user verification: User verification does not exist');
+        }
+
+        try {
+            $totp = $this->getTotpFromJson($meta_value);
+        } catch (OrmServiceException) {
+            $this->deleteUserVerification($user_id);
+            throw new DoesNotExistException('Unable to get user verification: User verification is invalid or expired');
+        }
+
+        return $totp;
+
+    }
+
+    /**
+     * Quietly hard-delete user verification, if existing.
+     *
+     * @param string $user_id
+     * @return bool
+     */
+    public function deleteUserVerification(string $user_id): bool
+    {
+        return $this->ormService->db->delete($this->table_name, [
+            'user' => $user_id,
+            'meta_key' => $this->getProtectedPrefix() . 'verification'
+        ]);
+    }
+
+    /**
+     * Quietly hard-delete all expired user verification TOTP's.
+     *
+     * @return void
+     */
+    public function deleteExpiredUserVerifications(): void
+    {
+        $this->deleteExpiredTotps($this->getProtectedPrefix() . 'verification');
+    }
+
 }

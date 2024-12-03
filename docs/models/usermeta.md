@@ -51,6 +51,10 @@ Model-specific methods include:
 - [getUserTotp](#getusertotp)
 - [deleteUserTotp](#deleteusertotp)
 - [deleteExpiredUserTotps](#deleteexpiredusertotps)
+- [createUserVerification](#createuserverification)
+- [getUserVerification](#getuserverification)
+- [deleteUserVerification](#deleteuserverification)
+- [deleteExpiredUserVerifications](#deleteexpireduserverifications)
 
 ## withProtectedPrefix
 
@@ -335,6 +339,75 @@ Quietly hard-delete user TOTP, if existing.
 **Description:**
 
 Quietly hard-delete all expired user TOTP's.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (void)
+
+## createUserVerification
+
+**Description:**
+
+Create user verification, verifying TOTP wait time has elapsed.
+Value is hashed using [createHash](../rbacservice.md#createhash)
+
+**Parameters:**
+
+- `$user_id` (string)
+- `$length` (int)
+- `$type` (string): Any [RbacService](../rbacservice.md#createtotp) `TOTP_TYPE_*` constant
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException`
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## getUserVerification
+
+**Description:**
+
+Get non-deleted user verification, or quietly delete if invalid or expired.
+Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
+
+## deleteUserVerification
+
+**Description:**
+
+Quietly hard-delete user verification, if existing.
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- (bool)
+
+## deleteExpiredUserVerifications
+
+**Description:**
+
+Quietly hard-delete all expired user verification TOTP's.
 
 **Parameters:**
 

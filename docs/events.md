@@ -37,5 +37,7 @@ An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/
 is passed as a parameter.
 - `rbac.user.password.request`: Executed on creation of a [password request](models/usermeta.md#createpasswordrequest).
 The user ID and [Totp](totp.md) instance are passed as parameters.
+- `rbac.user.verification.request`: Executed on creation of a [user verification request](models/usermeta.md#createuserverification).
+  The user ID and [Totp](totp.md) instance are passed as parameters.
 - `rbac.user.totp.created`: Executed when a [user TOTP](models/usermeta.md#createusertotp) is created.
   The user ID and [Totp](totp.md) instance are passed as parameters.
