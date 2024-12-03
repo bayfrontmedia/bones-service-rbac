@@ -159,7 +159,7 @@ class RbacService extends Service
     public function totpIsExpired(Totp $totp): bool
     {
 
-        if ($totp->getExpiresAt() !== 0 && $totp->getExpiresAt() < time()) {
+        if ($totp->getExpiresAt() !== 0 && $totp->getExpiresAt() > time()) {
             return false;
         }
 

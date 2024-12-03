@@ -611,7 +611,7 @@ class UserMetaModel extends RbacModel
     private function createAndSaveTotp(string $user_id, int $length, string $type, string $meta_key): Totp
     {
 
-        $totp = $this->rbacService->createTotp($this->rbacService->getConfig('user.totp.duration'), $length, $type);
+        $totp = $this->rbacService->createTotp($this->rbacService->getConfig('user.totp.duration', 10), $length, $type);
 
         try {
 
