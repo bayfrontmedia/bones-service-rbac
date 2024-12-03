@@ -752,17 +752,17 @@ class UserMetaModel extends RbacModel
 
         $deleted_at_field = $this->getDeletedAtField();
 
-        $request = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
+        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
             'userId' => $user_id,
             'metaKey' => $this->getProtectedPrefix() . 'password_request'
         ]);
 
-        if (!$request) {
+        if (!$meta_value) {
             throw new DoesNotExistException('Unable to get password request: Password request does not exist');
         }
 
         try {
-            $totp = $this->getTotpFromJson($request['meta_value']);
+            $totp = $this->getTotpFromJson($meta_value);
         } catch (OrmServiceException) {
             $this->deletePasswordRequest($user_id);
             throw new DoesNotExistException('Unable to get password request: Password request is invalid or expired');
@@ -846,17 +846,17 @@ class UserMetaModel extends RbacModel
 
         $deleted_at_field = $this->getDeletedAtField();
 
-        $user_totp = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
+        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
             'userId' => $user_id,
             'metaKey' => $this->getProtectedPrefix() . 'totp'
         ]);
 
-        if (!$user_totp) {
+        if (!$meta_value) {
             throw new DoesNotExistException('Unable to get user TOTP: User TOTP does not exist');
         }
 
         try {
-            $totp = $this->getTotpFromJson($user_totp['meta_value']);
+            $totp = $this->getTotpFromJson($meta_value);
         } catch (OrmServiceException) {
             $this->deleteUserTotp($user_id);
             throw new DoesNotExistException('Unable to get user TOTP: User TOTP is invalid or expired');
