@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Renamed all models to include `Model` suffix.
+- Updated `rbac.user.mfa.created` event to pass the user's email as a parameter.
 
 ### Fixed
 

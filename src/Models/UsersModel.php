@@ -542,7 +542,7 @@ class UsersModel extends RbacModel
             throw new DoesNotExistException('Unable to create user MFA: User does not exist');
         }
 
-        $this->rbacService->ormService->events->doEvent('rbac.user.mfa.created', $mfa_raw);
+        $this->rbacService->ormService->events->doEvent('rbac.user.mfa.created', $email, $mfa_raw);
 
         return $mfa_raw;
 

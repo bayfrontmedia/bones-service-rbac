@@ -34,8 +34,5 @@ is passed as a parameter.
 An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the updated user is passed as a parameter.
 - `rbac.user.verified`: Executed when a [user is verified](models/users.md#verify). The user's email is passed as a parameter.
 - `rbac.user.mfa.created`: Executed when a [user MFA](models/users.md#createmfa) is created.
-An array with the keys `created_at`, `expires_at` and `value` is passed as a parameter.
-
-Since user MFA's can be created for a variety of reasons, such as to verify an account or request a password reset,
-there is no one event for when an MFA is verified.
+The user's email and an array with the keys `created_at`, `expires_at` and `value` are passed as parameters. 
 User MFA verified events can take place at the app-level.
