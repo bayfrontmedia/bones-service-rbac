@@ -138,6 +138,16 @@ class User
         return Arr::get($this->user, 'enabled', false);
     }
 
+    /***
+     * Is user verified?
+     *
+     * @return bool
+     */
+    public function isVerified(): bool
+    {
+        return Arr::get($this->user, 'verified_at') !== null;
+    }
+
     /*
      * |--------------------------------------------------------------------------
      * | Tenants

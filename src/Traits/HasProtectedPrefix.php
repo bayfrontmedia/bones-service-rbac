@@ -206,7 +206,7 @@ trait HasProtectedPrefix
 
         // Validate expired
 
-        if ($totp->getExpiresAt() !== 0 && $totp->getExpiresAt() > time()) {
+        if ($totp->getExpiresAt() !== 0 && $totp->getExpiresAt() < time()) {
             throw new OrmServiceException('Unable to get TOTP: TOTP is expired');
         }
 
@@ -233,11 +233,11 @@ trait HasProtectedPrefix
     public function createTotp(string $user_id, string $meta_key, int $wait, int $duration, int $length, string $type): Totp
     {
 
+        $now = time();
+
         try {
 
             $existing = $this->getTotp($user_id, $meta_key);
-
-            $now = time();
 
             if ($existing->getCreatedAt() > $now - ($wait * 60)) {
                 throw new AlreadyExistsException('Unable to create TOTP: Wait time not yet elapsed');
@@ -246,8 +246,6 @@ trait HasProtectedPrefix
         } catch (DoesNotExistException) {
             // Do nothing;
         }
-
-        $now = time();
 
         if ($duration === 0) {
             $expires_at = 0;

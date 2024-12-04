@@ -201,7 +201,7 @@ class UsersModel extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.user.created', $resource);
     }
 
     /**
@@ -274,7 +274,7 @@ class UsersModel extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        if (in_array('password', $fields)) {
+        if (isset($fields['password'])) {
             $this->rbacService->ormService->events->doEvent('rbac.user.password.updated', $resource);
         }
     }
