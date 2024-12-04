@@ -71,7 +71,7 @@ class TotpAuthenticator
         $userMetaModel = new UserMetaModel($this->rbacService);
 
         try {
-            $totp = $userMetaModel->getTotp($user->getId(), $userMetaModel->getTotpKeyTfa());
+            $totp = $userMetaModel->getTotp($user->getId(), $userMetaModel->totp_meta_key_tfa);
         } catch (DoesNotExistException) {
             throw new TotpDoesNotExistException('Unable to authenticate user: TOTP does not exist');
         }
@@ -82,7 +82,7 @@ class TotpAuthenticator
 
         // Delete TOTP
 
-        $userMetaModel->deleteTotp($user->getId(), $userMetaModel->getTotpKeyTfa());
+        $userMetaModel->deleteTotp($user->getId(), $userMetaModel->totp_meta_key_tfa);
 
         return $user;
 

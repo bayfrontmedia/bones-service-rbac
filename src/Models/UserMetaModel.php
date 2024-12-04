@@ -32,6 +32,10 @@ class UserMetaModel extends RbacModel
     public function __construct(RbacService $rbacService)
     {
         parent::__construct($rbacService, $rbacService::TABLE_USER_META);
+
+        $this->totp_meta_key_password = $this->getProtectedPrefix() . 'password';
+        $this->totp_meta_key_tfa = $this->getProtectedPrefix() . 'tfa';
+        $this->totp_meta_key_verification = $this->getProtectedPrefix() . 'verification';
     }
 
     /**
@@ -592,34 +596,11 @@ class UserMetaModel extends RbacModel
 
     }
 
-    /**
-     * Get meta key for TFA TOTP.
-     *
-     * @return string
+    /*
+     * TOTP meta key definitions
      */
-    public function getTotpKeyTfa(): string
-    {
-        return $this->getProtectedPrefix() . 'totp_tfa';
-    }
-
-    /**
-     * Get meta key for password request TOTP.
-     *
-     * @return string
-     */
-    public function getTotpKeyPasswordRequest(): string
-    {
-        return $this->getProtectedPrefix() . 'totp_password';
-    }
-
-    /**
-     * Get meta key for user verification TOTP.
-     *
-     * @return string
-     */
-    public function getTotpKeyVerificationRequest(): string
-    {
-        return $this->getProtectedPrefix() . 'totp_verification';
-    }
+    public string $totp_meta_key_password;
+    public string $totp_meta_key_tfa;
+    public string $totp_meta_key_verification;
 
 }
