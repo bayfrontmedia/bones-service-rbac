@@ -10,7 +10,6 @@ use Bayfront\BonesService\Orm\OrmService;
 use Bayfront\BonesService\Rbac\Events\RbacServiceEvents;
 use Bayfront\BonesService\Rbac\Exceptions\RbacServiceException;
 use Bayfront\BonesService\Rbac\Filters\RbacServiceFilters;
-use Bayfront\StringHelpers\Str;
 
 class RbacService extends Service
 {
@@ -121,50 +120,5 @@ class RbacService extends Service
     public const TOTP_TYPE_NUMERIC = 'numeric';
     public const TOTP_TYPE_ALPHANUMERIC = 'alphanumeric';
     public const TOTP_TYPE_ALL = 'all';
-
-    /**
-     * Create TOTP (Time-based one-time password).
-     * Returns raw value. How the TOTP is handled is determined at the app-level.
-     *
-     * @param int $duration (Validity duration, in minutes. 0 for no expiration.)
-     * @param int $length
-     * @param string $type (Any TOTP_TYPE_* constant)
-     * @return Totp
-     */
-    public function createTotp(int $duration = 0, int $length = 6, string $type = self::TOTP_TYPE_NUMERIC): Totp
-    {
-
-        $now = time();
-
-        if ($duration === 0) {
-            $expires_at = 0;
-        } else {
-            $expires_at = $now + ($duration * 60);
-        }
-
-        return new Totp([
-            'created_at' => $now,
-            'expires_at' => $expires_at,
-            'value' => Str::random($length, $type)
-        ]);
-
-    }
-
-    /**
-     * Is TOTP expired?
-     *
-     * @param Totp $totp
-     * @return bool
-     */
-    public function totpIsExpired(Totp $totp): bool
-    {
-
-        if ($totp->getExpiresAt() !== 0 && $totp->getExpiresAt() > time()) {
-            return false;
-        }
-
-        return true;
-
-    }
 
 }

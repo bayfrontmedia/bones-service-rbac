@@ -46,10 +46,8 @@ class TotpAuthenticator
         try {
             $user_resource = $usersModel->findByEmail($email);
         } catch (DoesNotExistException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.totp', $email);
             throw new UserDoesNotExistException('Unable to authenticate user: User does not exist');
         } catch (UnexpectedException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.totp', $email);
             throw new UnexpectedAuthenticationException('Unable to authenticate user: Unable to find user');
         }
 
@@ -58,7 +56,6 @@ class TotpAuthenticator
         // User is enabled
 
         if (!$user->isEnabled()) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.totp', $email);
             throw new UserDisabledException('Unable to authenticate user: User is disabled');
         }
 
@@ -66,7 +63,6 @@ class TotpAuthenticator
 
         if ($this->rbacService->getConfig('user.verification.require', true) === true
             && $user->get('verified_at') === null) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.totp', $email);
             throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');
         }
 
@@ -75,22 +71,18 @@ class TotpAuthenticator
         $userMetaModel = new UserMetaModel($this->rbacService);
 
         try {
-            $totp = $userMetaModel->getUserTotp($user->getId());
+            $totp = $userMetaModel->getTotp($user->getId(), $userMetaModel->getTotpKeyTfa());
         } catch (DoesNotExistException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.totp', $email);
             throw new TotpDoesNotExistException('Unable to authenticate user: TOTP does not exist');
         }
 
         if (!$this->rbacService->hashMatches($totp->getValue(), $value)) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.totp', $email);
             throw new TotpDoesNotExistException('Unable to authenticate user: TOTP does not exist with value');
         }
 
         // Delete TOTP
 
-        $userMetaModel->deleteUserTotp($user->getId());
-
-        $this->rbacService->ormService->events->doEvent('rbac.auth.success', $user);
+        $userMetaModel->deleteTotp($user->getId(), $userMetaModel->getTotpKeyTfa());
 
         return $user;
 

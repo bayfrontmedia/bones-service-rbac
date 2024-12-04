@@ -3,11 +3,17 @@
 namespace Bayfront\BonesService\Rbac\Traits;
 
 use Bayfront\ArrayHelpers\Arr;
+use Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException;
+use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
+use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
+use Bayfront\BonesService\Rbac\Totp;
 use Bayfront\SimplePdo\Exceptions\QueryException;
 use Bayfront\SimplePdo\Query;
+use Bayfront\StringHelpers\Str;
+use Bayfront\Validator\Rules\IsJson;
 
 /**
  * Necessary filters for protected prefix.
@@ -164,6 +170,196 @@ trait HasProtectedPrefix
     {
         $this->with_protected = false;
         $this->only_protected = false;
+    }
+
+    /*
+     * |--------------------------------------------------------------------------
+     * | TOTP
+     * |--------------------------------------------------------------------------
+     */
+
+    /**
+     * Get valid, non-expired TOTP from JSON-encoded meta value or throw exception.
+     *
+     * @param mixed $meta_value
+     * @return Totp
+     * @throws OrmServiceException
+     */
+    private function getTotpFromMetaValue(mixed $meta_value): Totp
+    {
+
+        // Validate format
+
+        $json = new IsJson($meta_value);
+
+        if (!$json->isValid()) {
+            throw new OrmServiceException('Unable to get TOTP: Invalid format');
+        }
+
+        $meta_value = json_decode($meta_value, true);
+
+        if (!isset($meta_value['created_at']) || !isset($meta_value['expires_at']) || !isset($meta_value['value'])) {
+            throw new OrmServiceException('Unable to get TOTP: Invalid or missing key(s)');
+        }
+
+        $totp = new Totp($meta_value);
+
+        // Validate expired
+
+        if ($totp->getExpiresAt() !== 0 && $totp->getExpiresAt() > time()) {
+            throw new OrmServiceException('Unable to get TOTP: TOTP is expired');
+        }
+
+        return $totp;
+
+    }
+
+    /**
+     * Create TOTP and save with hashed value, ensuring wait time has elapsed.
+     * Value is hashed using RbacService->createHash().
+     * Returns TOTP with raw value.
+     *
+     * @param string $user_id
+     * @param string $meta_key
+     * @param int $wait
+     * @param int $duration
+     * @param int $length
+     * @param string $type (Any valid RbacService TOTP_TYPE_* constant)
+     * @return Totp
+     * @throws AlreadyExistsException (Thrown when wait time has not elapsed)
+     * @throws DoesNotExistException (Thrown when user does not exist)
+     * @throws UnexpectedException
+     */
+    public function createTotp(string $user_id, string $meta_key, int $wait, int $duration, int $length, string $type): Totp
+    {
+
+        try {
+
+            $existing = $this->getTotp($user_id, $meta_key);
+
+            $now = time();
+
+            if ($existing->getCreatedAt() > $now - ($wait * 60)) {
+                throw new AlreadyExistsException('Unable to create TOTP: Wait time not yet elapsed');
+            }
+
+        } catch (DoesNotExistException) {
+            // Do nothing;
+        }
+
+        $now = time();
+
+        if ($duration === 0) {
+            $expires_at = 0;
+        } else {
+            $expires_at = $now + ($duration * 60);
+        }
+
+        $totp = new Totp([
+            'created_at' => $now,
+            'expires_at' => $expires_at,
+            'value' => Str::random($length, $type)
+        ]);
+
+        try {
+
+            $this->withProtectedPrefix()->upsert([
+                'user' => $user_id,
+                'meta_key' => $meta_key,
+                'meta_value' => json_encode([
+                    'created_at' => $totp->getCreatedAt(),
+                    'expires_at' => $totp->getExpiresAt(),
+                    'value' => $this->rbacService->createHash($totp->getValue())
+                ])
+            ]);
+
+        } catch (InvalidFieldException) {
+            throw new UnexpectedException('Unable to create TOTP: Error upserting value');
+        }
+
+        return $totp;
+
+    }
+
+    /**
+     * Get non-deleted, valid, unexpired TOTP.
+     * Quietly deletes if invalid or expired.
+     * Value can be verified using RbacService->hashMatches().
+     *
+     * @param string $user_id
+     * @param string $meta_key
+     * @return Totp
+     * @throws DoesNotExistException
+     */
+    public function getTotp(string $user_id, string $meta_key): Totp
+    {
+
+        $deleted_at_field = $this->getDeletedAtField();
+
+        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
+            'userId' => $user_id,
+            'metaKey' => $meta_key
+        ]);
+
+        if (!$meta_value) {
+            throw new DoesNotExistException('Unable to get TOTP: TOTP does not exist');
+        }
+
+        try {
+            return $this->getTotpFromMetaValue($meta_value);
+        } catch (OrmServiceException $e) {
+            $this->deleteTotp($user_id, $meta_key);
+            throw new DoesNotExistException('Unable to get TOTP: TOTP is invalid or expired', 0, $e);
+        }
+
+    }
+
+    /**
+     * Quietly hard-delete TOTP, if existing.
+     *
+     * @param string $user_id
+     * @param string $meta_key
+     * @return bool
+     */
+    public function deleteTotp(string $user_id, string $meta_key): bool
+    {
+        return $this->ormService->db->delete($this->table_name, [
+            'user' => $user_id,
+            'meta_key' => $meta_key
+        ]);
+    }
+
+    /**
+     * Quietly hard-delete all expired TOTP's.
+     *
+     * @param string $meta_key
+     * @return void
+     */
+    public function deleteExpiredTotps(string $meta_key): void
+    {
+
+        $table = $this->getTableName();
+
+        $requests = $this->ormService->db->select("SELECT id, meta_value FROM $table WHERE meta_key = :metaKey", [
+            'metaKey' => $meta_key
+        ]);
+
+        $delete_ids = [];
+
+        foreach ($requests as $request) {
+
+            try {
+                $this->getTotpFromMetaValue($request['meta_value']);
+            } catch (OrmServiceException) {
+                $delete_ids[] = $request['id'];
+            }
+
+        }
+
+        if (!empty($delete_ids)) {
+            $this->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
+        }
+
     }
 
 }

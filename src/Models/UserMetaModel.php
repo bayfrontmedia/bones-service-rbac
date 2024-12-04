@@ -4,16 +4,13 @@ namespace Bayfront\BonesService\Rbac\Models;
 
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Application\Utilities\App;
-use Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
-use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
-use Bayfront\BonesService\Rbac\Totp;
 use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
 use Bayfront\JWT\Jwt;
 use Bayfront\JWT\TokenException;
@@ -594,394 +591,35 @@ class UserMetaModel extends RbacModel
         }
 
     }
-    
-    // ------------------------- TOTPs -------------------------
 
     /**
-     * Create TOTP and save with hashed value.
-     * Returns TOTP with raw value.
+     * Get meta key for TFA TOTP.
      *
-     * @param string $user_id
-     * @param int $length
-     * @param string $type
-     * @param string $meta_key
-     * @return Totp
-     * @throws UnexpectedException
+     * @return string
      */
-    private function createAndSaveTotp(string $user_id, int $length, string $type, string $meta_key): Totp
+    public function getTotpKeyTfa(): string
     {
-
-        $totp = $this->rbacService->createTotp($this->rbacService->getConfig('user.totp.duration', 10), $length, $type);
-
-        try {
-
-            $this->withProtectedPrefix()->upsert([
-                'user' => $user_id,
-                'meta_key' => $meta_key,
-                'meta_value' => json_encode([
-                    'created_at' => $totp->getCreatedAt(),
-                    'expires_at' => $totp->getExpiresAt(),
-                    'value' => $this->rbacService->createHash($totp->getValue())
-                ])
-            ]);
-
-        } catch (OrmServiceException) {
-            throw new UnexpectedException('Unable to create TOTP: Error upserting value');
-        }
-
-        return $totp;
-
+        return $this->getProtectedPrefix() . 'totp_tfa';
     }
 
     /**
-     * Get non-expired TOTP from JSON-encoded meta value.
+     * Get meta key for password request TOTP.
      *
-     * @param mixed $meta_value
-     * @return Totp
-     * @throws OrmServiceException
+     * @return string
      */
-    private function getTotpFromJson(mixed $meta_value): Totp
+    public function getTotpKeyPasswordRequest(): string
     {
-
-        // Validate format
-
-        $json = new IsJson($meta_value);
-
-        if (!$json->isValid()) {
-            throw new OrmServiceException('Unable to get TOTP: Invalid format');
-        }
-
-        $meta_value = json_decode($meta_value, true);
-
-        if (!isset($meta_value['created_at']) || !isset($meta_value['expires_at']) || !isset($meta_value['value'])) {
-            throw new OrmServiceException('Unable to get TOTP: Invalid or missing key(s)');
-        }
-
-        $totp = new Totp($meta_value);
-
-        // Validate expired
-
-        if ($this->rbacService->totpIsExpired($totp)) {
-            throw new OrmServiceException('Unable to get TOTP: TOTP is expired');
-        }
-
-        return $totp;
-
+        return $this->getProtectedPrefix() . 'totp_password';
     }
 
     /**
-     * Delete expired TOTP's.
+     * Get meta key for user verification TOTP.
      *
-     * @param string $meta_key
-     * @return void
+     * @return string
      */
-    private function deleteExpiredTotps(string $meta_key): void
+    public function getTotpKeyVerificationRequest(): string
     {
-
-        $table = $this->getTableName();
-
-        $requests = $this->rbacService->ormService->db->select("SELECT id, meta_value FROM $table WHERE meta_key = :metaKey", [
-            'metaKey' => $meta_key
-        ]);
-
-        $delete_ids = [];
-
-        foreach ($requests as $request) {
-
-            try {
-                $this->getTotpFromJson($request['meta_value']);
-            } catch (OrmServiceException) {
-                $delete_ids[] = $request['id'];
-            }
-
-        }
-
-        if (!empty($delete_ids)) {
-            $this->rbacService->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
-        }
-
-    }
-
-    /**
-     * Create password request, verifying TOTP wait time has elapsed.
-     * Value is hashed using RbacService->createHash().
-     *
-     * @param string $user_id
-     * @param int $length
-     * @param string $type (Any RbacService TOTP_TYPE_* constant)
-     * @return Totp
-     * @throws AlreadyExistsException
-     * @throws UnexpectedException
-     */
-    public function createPasswordRequest(string $user_id, int $length, string $type): Totp
-    {
-
-        try {
-
-            $existing = $this->getPasswordRequest($user_id);
-
-            $now = time();
-            $totp_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
-
-            if ($existing->getCreatedAt() > $now - ($totp_wait * 60)) {
-                throw new AlreadyExistsException('Unable to create password request: Wait time not yet elapsed');
-            }
-
-        } catch (DoesNotExistException) {
-            // Do nothing;
-        }
-
-        $totp = $this->createAndSaveTotp($user_id, $length, $type, $this->getProtectedPrefix() . 'password_request');
-
-        $this->rbacService->ormService->events->doEvent('rbac.user.password.request', $user_id, $totp);
-
-        return $totp;
-
-    }
-
-    /**
-     * Get non-deleted password request, or quietly delete if invalid or expired.
-     * Value can be verified using RbacService->hashMatches().
-     *
-     * @param string $user_id
-     * @return Totp
-     * @throws DoesNotExistException
-     */
-    public function getPasswordRequest(string $user_id): Totp
-    {
-
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
-            'userId' => $user_id,
-            'metaKey' => $this->getProtectedPrefix() . 'password_request'
-        ]);
-
-        if (!$meta_value) {
-            throw new DoesNotExistException('Unable to get password request: Password request does not exist');
-        }
-
-        try {
-            $totp = $this->getTotpFromJson($meta_value);
-        } catch (OrmServiceException) {
-            $this->deletePasswordRequest($user_id);
-            throw new DoesNotExistException('Unable to get password request: Password request is invalid or expired');
-        }
-
-        return $totp;
-
-    }
-
-    /**
-     * Quietly hard-delete password request, if existing.
-     *
-     * @param string $user_id
-     * @return bool
-     */
-    public function deletePasswordRequest(string $user_id): bool
-    {
-        return $this->ormService->db->delete($this->table_name, [
-            'user' => $user_id,
-            'meta_key' => $this->getProtectedPrefix() . 'password_request'
-        ]);
-    }
-
-    /**
-     * Quietly hard-delete all expired password requests.
-     *
-     * @return void
-     */
-    public function deleteExpiredPasswordRequests(): void
-    {
-        $this->deleteExpiredTotps($this->getProtectedPrefix() . 'password_request');
-    }
-
-    /**
-     * Create user TOTP, verifying TOTP wait time has elapsed.
-     * Value is hashed using RbacService->createHash().
-     *
-     * @param string $user_id
-     * @param int $length
-     * @param string $type (Any RbacService TOTP_TYPE_* constant)
-     * @return Totp
-     * @throws AlreadyExistsException
-     * @throws UnexpectedException
-     */
-    public function createUserTotp(string $user_id, int $length, string $type): Totp
-    {
-
-        try {
-
-            $existing = $this->getUserTotp($user_id);
-
-            $now = time();
-            $totp_wait = (int)$this->rbacService->getConfig('user.totp.wait', 3);
-
-            if ($existing->getCreatedAt() > $now - ($totp_wait * 60)) {
-                throw new AlreadyExistsException('Unable to create user TOTP: Wait time not yet elapsed');
-            }
-
-        } catch (DoesNotExistException) {
-            // Do nothing;
-        }
-
-        $totp = $this->createAndSaveTotp($user_id, $length, $type, $this->getProtectedPrefix() . 'totp');
-
-        $this->rbacService->ormService->events->doEvent('rbac.user.totp.created', $user_id, $totp);
-
-        return $totp;
-
-    }
-
-    /**
-     * Get non-deleted user TOTP, or quietly delete if invalid or expired.
-     * Value can be verified using RbacService->hashMatches().
-     *
-     * @param string $user_id
-     * @return Totp
-     * @throws DoesNotExistException
-     */
-    public function getUserTotp(string $user_id): Totp
-    {
-
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
-            'userId' => $user_id,
-            'metaKey' => $this->getProtectedPrefix() . 'totp'
-        ]);
-
-        if (!$meta_value) {
-            throw new DoesNotExistException('Unable to get user TOTP: User TOTP does not exist');
-        }
-
-        try {
-            $totp = $this->getTotpFromJson($meta_value);
-        } catch (OrmServiceException) {
-            $this->deleteUserTotp($user_id);
-            throw new DoesNotExistException('Unable to get user TOTP: User TOTP is invalid or expired');
-        }
-
-        return $totp;
-
-    }
-
-    /**
-     * Quietly hard-delete user TOTP, if existing.
-     *
-     * @param string $user_id
-     * @return bool
-     */
-    public function deleteUserTotp(string $user_id): bool
-    {
-        return $this->ormService->db->delete($this->table_name, [
-            'user' => $user_id,
-            'meta_key' => $this->getProtectedPrefix() . 'totp'
-        ]);
-    }
-
-    /**
-     * Quietly hard-delete all expired user TOTP's.
-     *
-     * @return void
-     */
-    public function deleteExpiredUserTotps(): void
-    {
-        $this->deleteExpiredTotps($this->getProtectedPrefix() . 'totp');
-    }
-
-    /**
-     * Create user verification, verifying TOTP wait time has elapsed.
-     * Value is hashed using RbacService->createHash().
-     *
-     * @param string $user_id
-     * @param int $length
-     * @param string $type (Any RbacService TOTP_TYPE_* constant)
-     * @return Totp
-     * @throws AlreadyExistsException
-     * @throws UnexpectedException
-     */
-    public function createUserVerification(string $user_id, int $length, string $type): Totp
-    {
-
-        try {
-
-            $existing = $this->getUserVerification($user_id);
-
-            $now = time();
-            $totp_wait = (int)$this->rbacService->getConfig('user.verification.wait', 3);
-
-            if ($existing->getCreatedAt() > $now - ($totp_wait * 60)) {
-                throw new AlreadyExistsException('Unable to create user TOTP: Wait time not yet elapsed');
-            }
-
-        } catch (DoesNotExistException) {
-            // Do nothing;
-        }
-
-        $totp = $this->createAndSaveTotp($user_id, $length, $type, $this->getProtectedPrefix() . 'verification');
-
-        $this->rbacService->ormService->events->doEvent('rbac.user.verification.request', $user_id, $totp);
-
-        return $totp;
-
-    }
-
-    /**
-     * Get non-deleted user verification, or quietly delete if invalid or expired.
-     * Value can be verified using RbacService->hashMatches().
-     *
-     * @param string $user_id
-     * @return Totp
-     * @throws DoesNotExistException
-     */
-    public function getUserVerification(string $user_id): Totp
-    {
-
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
-            'userId' => $user_id,
-            'metaKey' => $this->getProtectedPrefix() . 'verification'
-        ]);
-
-        if (!$meta_value) {
-            throw new DoesNotExistException('Unable to get user verification: User verification does not exist');
-        }
-
-        try {
-            $totp = $this->getTotpFromJson($meta_value);
-        } catch (OrmServiceException) {
-            $this->deleteUserVerification($user_id);
-            throw new DoesNotExistException('Unable to get user verification: User verification is invalid or expired');
-        }
-
-        return $totp;
-
-    }
-
-    /**
-     * Quietly hard-delete user verification, if existing.
-     *
-     * @param string $user_id
-     * @return bool
-     */
-    public function deleteUserVerification(string $user_id): bool
-    {
-        return $this->ormService->db->delete($this->table_name, [
-            'user' => $user_id,
-            'meta_key' => $this->getProtectedPrefix() . 'verification'
-        ]);
-    }
-
-    /**
-     * Quietly hard-delete all expired user verification TOTP's.
-     *
-     * @return void
-     */
-    public function deleteExpiredUserVerifications(): void
-    {
-        $this->deleteExpiredTotps($this->getProtectedPrefix() . 'verification');
+        return $this->getProtectedPrefix() . 'totp_verification';
     }
 
 }

@@ -57,10 +57,8 @@ class UserKeyAuthenticator
         try {
             $user_key_resource = $userKeysModel->findByKey($user_key);
         } catch (DoesNotExistException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
             throw new InvalidUserKeyException('Unable to authenticate user: User key does not exist');
         } catch (UnexpectedException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
             throw new UnexpectedAuthenticationException('Unable to authenticate user: Unexpected error');
         }
 
@@ -74,7 +72,6 @@ class UserKeyAuthenticator
          */
 
         if (Time::inPast(Arr::get($user_key, 'expires_at', Time::getDateTime()))) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
             throw new ExpiredUserKeyException('Unable to authenticate user: User key is expired');
         }
 
@@ -85,7 +82,6 @@ class UserKeyAuthenticator
         if (is_array($allowed_domains) && !empty($allowed_domains)) {
 
             if (!in_array($domain, $allowed_domains)) {
-                $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
                 throw new InvalidDomainException('Unable to authenticate user: Invalid domain');
             }
 
@@ -98,7 +94,6 @@ class UserKeyAuthenticator
         if (is_array($allowed_ips) && !empty($allowed_ips)) {
 
             if (!in_array($ip, $allowed_ips)) {
-                $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
                 throw new InvalidIpException('Unable to authenticate user: Invalid IP');
             }
 
@@ -111,10 +106,8 @@ class UserKeyAuthenticator
         try {
             $user_resource = $usersModel->find(Arr::get($user_key, 'user', ''));
         } catch (DoesNotExistException) { // User key exists, but user is soft-deleted
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
             throw new UserDoesNotExistException('Unable to authenticate user: User does not exist');
         } catch (UnexpectedException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
             throw new UnexpectedAuthenticationException('Unable to authenticate user: Unable to find user');
         }
 
@@ -123,7 +116,6 @@ class UserKeyAuthenticator
         // User is enabled
 
         if (!$user->isEnabled()) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
             throw new UserDisabledException('Unable to authenticate user: User is disabled');
         }
 
@@ -131,7 +123,6 @@ class UserKeyAuthenticator
 
         if ($this->rbacService->getConfig('user.verification.require', true) === true
             && $user->get('verified_at') === null) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.key');
             throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');
         }
 
@@ -148,8 +139,6 @@ class UserKeyAuthenticator
         ], [
             'id' => Arr::get($user_key, 'id', '')
         ]);
-
-        $this->rbacService->ormService->events->doEvent('rbac.auth.success', $user);
 
         return $user;
 

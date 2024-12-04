@@ -26,9 +26,7 @@ class EmailAuthenticator
      * Authenticate with email.
      *
      * NOTE:
-     * This should be used in conjunction with another authentication method,
-     * such as a TOTP.
-     * Because of this, the rbac.auth.success event is not executed.
+     * This should be used in conjunction with another authentication method, such as a TOTP.
      *
      * @param string $email
      * @param bool $check_verified (Check if user is verified when require verification is enabled)
@@ -46,10 +44,8 @@ class EmailAuthenticator
         try {
             $user_resource = $usersModel->findByEmail($email);
         } catch (DoesNotExistException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.email', $email);
             throw new UserDoesNotExistException('Unable to authenticate user: User does not exist');
         } catch (UnexpectedException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.email', $email);
             throw new UnexpectedAuthenticationException('Unable to authenticate user: Unable to find user');
         }
 
@@ -58,7 +54,6 @@ class EmailAuthenticator
         // User is enabled
 
         if (!$user->isEnabled()) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.email', $email);
             throw new UserDisabledException('Unable to authenticate user: User is disabled');
         }
 
@@ -68,7 +63,6 @@ class EmailAuthenticator
 
             if ($this->rbacService->getConfig('user.verification.require', true) === true
                 && $user->get('verified_at') === null) {
-                $this->rbacService->ormService->events->doEvent('rbac.auth.fail.email', $email);
                 throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');
             }
 
