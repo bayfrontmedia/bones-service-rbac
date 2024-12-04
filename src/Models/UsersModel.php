@@ -274,6 +274,9 @@ class UsersModel extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
+
+        $this->ormService->events->doEvent('rbac.user.created', $resource, $previous, $fields);
+
         if (isset($fields['password'])) {
             $this->rbacService->ormService->events->doEvent('rbac.user.password.updated', $resource);
         }
@@ -345,7 +348,7 @@ class UsersModel extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.user.deleted', $resource);
     }
 
     /**
