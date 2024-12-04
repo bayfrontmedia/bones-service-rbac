@@ -275,7 +275,7 @@ class UsersModel extends RbacModel
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
 
-        $this->ormService->events->doEvent('rbac.user.created', $resource, $previous, $fields);
+        $this->ormService->events->doEvent('rbac.user.updated', $resource, $previous, $fields);
 
         if (isset($fields['password'])) {
             $this->rbacService->ormService->events->doEvent('rbac.user.password.updated', $resource);
