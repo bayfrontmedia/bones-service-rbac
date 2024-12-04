@@ -321,7 +321,7 @@ trait HasProtectedPrefix
      */
     public function deleteTotp(string $user_id, string $meta_key): bool
     {
-        return $this->ormService->db->delete($this->table_name, [
+        return $this->ormService->db->delete($this->getTableName(), [
             'user' => $user_id,
             'meta_key' => $meta_key
         ]);
