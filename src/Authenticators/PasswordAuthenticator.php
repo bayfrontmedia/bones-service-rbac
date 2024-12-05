@@ -74,7 +74,7 @@ class PasswordAuthenticator
 
         // Check user verification
 
-        if ($this->rbacService->getConfig('user.verification.require', true) === true
+        if ($this->rbacService->getConfig('user.require_verification', true) === true
             && $user->get('verified_at') === null) {
             throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');
         }

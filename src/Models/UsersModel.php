@@ -459,7 +459,7 @@ class UsersModel extends RbacModel
     public function deleteUnverified(int $timestamp): void
     {
 
-        if ($this->rbacService->getConfig('user.verification.require', true) === false) {
+        if ($this->rbacService->getConfig('user.require_verification', true) === false) {
             return;
         }
 
