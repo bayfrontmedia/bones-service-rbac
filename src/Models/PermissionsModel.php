@@ -327,7 +327,7 @@ class PermissionsModel extends RbacModel
     public function findByName(string $name): OrmResource
     {
 
-        $permission_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE name = :name", [
+        $permission_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE name = :name", [
             'name' => $name
         ]);
 

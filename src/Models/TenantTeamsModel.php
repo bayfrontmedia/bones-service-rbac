@@ -339,7 +339,7 @@ class TenantTeamsModel extends RbacModel
     public function findByName(string $tenant_id, string $name): OrmResource
     {
 
-        $team_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
+        $team_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
             'tenant' => $tenant_id,
             'name' => $name
         ]);

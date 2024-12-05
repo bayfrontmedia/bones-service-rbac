@@ -218,7 +218,7 @@ class UserKeysModel extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.created', $resource);
+        $this->ormService->events->doEvent('rbac.user.key.created', $resource);
     }
 
     /**
@@ -286,7 +286,7 @@ class UserKeysModel extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.updated', $resource, $previous, $fields);
+        $this->ormService->events->doEvent('rbac.user.key.updated', $resource, $previous, $fields);
     }
 
     /**
@@ -337,7 +337,7 @@ class UserKeysModel extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.deleted', $resource);
+        $this->ormService->events->doEvent('rbac.user.key.deleted', $resource);
     }
 
     /**
@@ -425,7 +425,7 @@ class UserKeysModel extends RbacModel
     private function hashedKeyExists(string $hashed_key): bool
     {
 
-        return $this->rbacService->ormService->db->exists($this->table_name, [
+        return $this->ormService->db->exists($this->table_name, [
             'key_value' => $hashed_key
         ]);
 
@@ -444,7 +444,7 @@ class UserKeysModel extends RbacModel
     public function findByKey(string $key): OrmResource
     {
 
-        $key_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE key_value = :keyValue", [
+        $key_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE key_value = :keyValue", [
             'keyValue' => App::createHash($key, App::getConfig('app.key', ''), 'sha256', true)
         ]);
 

@@ -2,15 +2,10 @@
 
 The `Bayfront\BonesService\Rbac\Models\UserMetaModel` is used to manage user metadata.
 
-This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
-
-The `protected_prefix` [config value](../setup.md#configuration) is used to restrict access to meta keys beginning with a protected prefix.
-This can be overridden using the [withProtectedPrefix](#withprotectedprefix) and [onlyProtectedPrefix](#onlyprotectedprefix) functions.
+This model uses the [HasProtectedPrefix](../traits/hasprotectedprefix.md) and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
 
 Due to the way the field is stored in the database, meta values will always be returned as a string.
 By JSON-encoding and decoding the value, other data types can be preserved.
-
-Protected user meta is utilized by this service to manage user access and refresh tokens.
 
 Allowed fields write:
 
@@ -32,71 +27,21 @@ Allowed fields read:
 - `updated_at`
 - `deleted_at`
 
+Model-specific properties (string) used to return protected meta keys for TOTP's:
+
+- `$totp_meta_key_password`
+- `$totp_meta_key_tfa`
+- `$totp_meta_key_verification`
+
 Model-specific methods include:
 
-- [withProtectedPrefix](#withprotectedprefix)
-- [onlyProtectedPrefix](#onlyprotectedprefix)
-- [getProtectedPrefix](#getprotectedprefix)
+
 - [findByKey](#findbykey)
 - [createToken](#createtoken)
 - [readToken](#readtoken)
 - [deleteToken](#deletetoken)
 - [deleteAllTokens](#deletealltokens)
 - [deleteExpiredTokens](#deleteexpiredtokens)
-- [createPasswordRequest](#createpasswordrequest)
-- [getPasswordRequest](#getpasswordrequest)
-- [deletePasswordRequest](#deletepasswordrequest)
-- [deleteExpiredPasswordRequests](#deleteexpiredpasswordrequests)
-- [createUserTotp](#createusertotp)
-- [getUserTotp](#getusertotp)
-- [deleteUserTotp](#deleteusertotp)
-- [deleteExpiredUserTotps](#deleteexpiredusertotps)
-- [createUserVerification](#createuserverification)
-- [getUserVerification](#getuserverification)
-- [deleteUserVerification](#deleteuserverification)
-- [deleteExpiredUserVerifications](#deleteexpireduserverifications)
-
-## withProtectedPrefix
-
-**Description:**
-
-Filter next query to include protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- `self`
-
-## onlyProtectedPrefix
-
-**Description:**
-
-Filter next query to include only protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- `self`
-
-## getProtectedPrefix
-
-**Description:**
-
-Get protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- (string)
 
 ## findByKey
 
@@ -221,7 +166,7 @@ Value is hashed using [createHash](../rbacservice.md#createhash)
 
 - `$user_id` (string)
 - `$length` (int)
-- `$type` (string): Any [RbacService](../rbacservice.md#createtotp) `TOTP_TYPE_*` constant
+- `$type` (string): Any [RbacService](../rbacservice.md) `TOTP_TYPE_*` constant
 
 **Returns:**
 
@@ -290,7 +235,7 @@ Value is hashed using [createHash](../rbacservice.md#createhash)
 
 - `$user_id` (string)
 - `$length` (int)
-- `$type` (string): Any [RbacService](../rbacservice.md#createtotp) `TOTP_TYPE_*` constant
+- `$type` (string): Any [RbacService](../rbacservice.md) `TOTP_TYPE_*` constant
 
 **Returns:**
 
@@ -359,7 +304,7 @@ Value is hashed using [createHash](../rbacservice.md#createhash)
 
 - `$user_id` (string)
 - `$length` (int)
-- `$type` (string): Any [RbacService](../rbacservice.md#createtotp) `TOTP_TYPE_*` constant
+- `$type` (string): Any [RbacService](../rbacservice.md) `TOTP_TYPE_*` constant
 
 **Returns:**
 

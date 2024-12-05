@@ -12,9 +12,11 @@ Methods include:
 - [read](#read)
 - [get](#get)
 - [getId](#getid)
+- [getEmail](#getemail)
 - [getMeta](#getmeta)
 - [isAdmin](#isadmin)
 - [isEnabled](#isenabled)
+- [isVerified](#isverified)
 - [getTenants](#gettenants)
 - [inTenant](#intenant)
 - [getOwnedTenants](#getownedtenants)
@@ -154,6 +156,20 @@ Is user an admin?
 **Description:**
 
 Is user enabled?
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (bool)
+
+## isVerified
+
+**Description:**
+
+Is user verified?
 
 **Parameters:**
 

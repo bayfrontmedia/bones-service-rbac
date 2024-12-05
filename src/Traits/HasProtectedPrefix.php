@@ -215,7 +215,7 @@ trait HasProtectedPrefix
     }
 
     /**
-     * Create TOTP and save with hashed value, ensuring wait time has elapsed.
+     * Create TOTP (time-based one-time password) and save with hashed value, ensuring wait time has elapsed.
      * Value is hashed using RbacService->createHash().
      * Returns TOTP with raw value.
      *

@@ -339,7 +339,7 @@ class TenantRolesModel extends RbacModel
     public function findByName(string $tenant_id, string $name): OrmResource
     {
 
-        $role_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
+        $role_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
             'tenant' => $tenant_id,
             'name' => $name
         ]);

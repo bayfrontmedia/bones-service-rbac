@@ -283,7 +283,7 @@ class TenantsModel extends RbacModel
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
         if (in_array('owner', $fields)) {
-            $this->rbacService->ormService->events->doEvent('rbac.tenant.owner.updated', $resource, $previous, $fields);
+            $this->ormService->events->doEvent('rbac.tenant.owner.updated', $resource, $previous, $fields);
         }
     }
 
@@ -399,7 +399,7 @@ class TenantsModel extends RbacModel
     public function findByDomain(string $domain): OrmResource
     {
 
-        $tenant_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE domain = :domain", [
+        $tenant_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE domain = :domain", [
             'domain' => $domain
         ]);
 

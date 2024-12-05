@@ -119,6 +119,5 @@ class RbacService extends Service
     public const TOTP_TYPE_ALPHA = 'alpha';
     public const TOTP_TYPE_NUMERIC = 'numeric';
     public const TOTP_TYPE_ALPHANUMERIC = 'alphanumeric';
-    public const TOTP_TYPE_ALL = 'all';
 
 }

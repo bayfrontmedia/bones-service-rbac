@@ -181,7 +181,7 @@ class TenantUsersModel extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.created', $resource);
+        $this->ormService->events->doEvent('rbac.tenant.user.created', $resource);
     }
 
     /**
@@ -259,7 +259,7 @@ class TenantUsersModel extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.updated', $resource, $previous, $fields);
+        $this->ormService->events->doEvent('rbac.tenant.user.updated', $resource, $previous, $fields);
     }
 
     /**
@@ -320,7 +320,7 @@ class TenantUsersModel extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.deleted', $resource);
+        $this->ormService->events->doEvent('rbac.tenant.user.deleted', $resource);
     }
 
     /**
@@ -369,7 +369,7 @@ class TenantUsersModel extends RbacModel
     public function findByUserId(string $tenant_id, string $user_id): OrmResource
     {
 
-        $tenant_user_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenantId AND user = :userId", [
+        $tenant_user_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenantId AND user = :userId", [
             'tenantId' => $tenant_id,
             'userId' => $user_id
         ]);

@@ -4,14 +4,19 @@ The `Bayfront\BonesService\Rbac\RbacService` class contains the following Bones 
 
 - [ORM service](https://github.com/bayfrontmedia/bones-service-orm)
 
+The following constants exist to define TOTP type when using the createTotp method:
+
+- `TOTP_TYPE_NONZERO`
+- `TOTP_TYPE_ALPHA`
+- `TOTP_TYPE_NUMERIC`
+- `TOTP_TYPE_ALPHANUMERIC`
+
 Methods include:
 
 - [getConfig](#getconfig)
 - [getTableName](#gettablename)
 - [createHash](#createhash)
 - [hashMatches](#hashmatches)
-- [createTotp](#createtotp)
-- [totpIsExpired](#totpisexpired)
 
 ## getConfig
 
@@ -66,45 +71,6 @@ Does hash match raw value?
 
 - `$hash` (string)
 - `$raw_value` (string)
-
-**Returns:**
-
-- (bool)
-
-## createTotp
-
-**Description:**
-
-Create TOTP (Time-based one-time password).
-Returns raw value. How the TOTP is handled is determined at the app-level.
-
-**Parameters:**
-
-- `$duration = 0` (int): Validity duration, in minutes. `0` for no expiration.
-- `$length = 6` (int)
-- `$type = self::TOTP_TYPE_NUMERIC`: Any `TOTP_TYPE_*` constant
-
-Constants include:
-
-- `TOTP_TYPE_NONZERO`
-- `TOTP_TYPE_ALPHA`
-- `TOTP_TYPE_NUMERIC`
-- `TOTP_TYPE_ALPHANUMERIC`
-- `TOTP_TYPE_ALL`
-
-**Returns:**
-
-- [Totp](totp.md)
-
-## totpIsExpired
-
-**Description:**
-
-Is TOTP expired?
-
-**Parameters:**
-
-- `$totp` ([Totp](totp.md))
 
 **Returns:**
 

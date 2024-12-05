@@ -362,7 +362,7 @@ class UserMetaModel extends RbacModel
     public function findByKey(string $user_id, string $meta_key): OrmResource
     {
 
-        $meta_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey", [
+        $meta_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey", [
             'userId' => $user_id,
             'metaKey' => $meta_key
         ]);
@@ -395,7 +395,7 @@ class UserMetaModel extends RbacModel
 
         $jwt = new Jwt(App::getConfig('app.key'));
 
-        $payload = array_merge($this->rbacService->ormService->filters->doFilter('rbac.token.payload', []), [
+        $payload = array_merge($this->ormService->filters->doFilter('rbac.token.payload', []), [
             'type' => $type
         ]);
 
@@ -515,14 +515,14 @@ class UserMetaModel extends RbacModel
 
         if ($type == self::TOKEN_TYPE_ACCESS) {
 
-            return $this->rbacService->ormService->db->query("DELETE FROM $table WHERE user = :user AND meta_key = :accessToken", [
+            return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND meta_key = :accessToken", [
                 'user' => $user_id,
                 'accessToken' => $this->getProtectedPrefix() . 'access_token'
             ]);
 
         } else if ($type == self::TOKEN_TYPE_REFRESH) {
 
-            return $this->rbacService->ormService->db->query("DELETE FROM $table WHERE user = :user AND meta_key = :refreshToken", [
+            return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND meta_key = :refreshToken", [
                 'user' => $user_id,
                 'refreshToken' => $this->getProtectedPrefix() . 'refresh_token'
             ]);
@@ -544,7 +544,7 @@ class UserMetaModel extends RbacModel
 
         $table = $this->getTableName();
 
-        return $this->rbacService->ormService->db->query("DELETE FROM $table WHERE user = :user AND (meta_key = :accessToken OR meta_key = :refreshToken)", [
+        return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND (meta_key = :accessToken OR meta_key = :refreshToken)", [
             'user' => $user_id,
             'accessToken' => $this->getProtectedPrefix() . 'access_token',
             'refreshToken' => $this->getProtectedPrefix() . 'refresh_token'
@@ -564,7 +564,7 @@ class UserMetaModel extends RbacModel
 
         $table = $this->getTableName();
 
-        $tokens = $this->rbacService->ormService->db->select("SELECT id, meta_value FROM $table WHERE meta_key = :accessToken OR meta_key = :refreshToken", [
+        $tokens = $this->ormService->db->select("SELECT id, meta_value FROM $table WHERE meta_key = :accessToken OR meta_key = :refreshToken", [
             'accessToken' => $this->getProtectedPrefix() . 'access_token',
             'refreshToken' => $this->getProtectedPrefix() . 'refresh_token'
         ]);
@@ -591,7 +591,7 @@ class UserMetaModel extends RbacModel
         }
 
         if (!empty($delete_ids)) {
-            $this->rbacService->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
+            $this->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
         }
 
     }

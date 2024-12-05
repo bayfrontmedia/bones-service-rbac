@@ -192,7 +192,7 @@ class TenantInvitationsModel extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.invitation.created', $resource);
+        $this->ormService->events->doEvent('rbac.tenant.invitation.created', $resource);
     }
 
     /**
@@ -358,7 +358,7 @@ class TenantInvitationsModel extends RbacModel
     public function findByEmail(string $email, string $tenant_id): OrmResource
     {
 
-        $invitation_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email AND tenant = :tenant", [
+        $invitation_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email AND tenant = :tenant", [
             'email' => $email,
             'tenant' => $tenant_id
         ]);
@@ -391,7 +391,7 @@ class TenantInvitationsModel extends RbacModel
 
         $deleted_at_field = $this->getDeletedAtField();
 
-        $invitation = $this->rbacService->ormService->db->row("SELECT id, role, expires_at FROM $this->table_name WHERE email = :email AND tenant = :tenant AND $deleted_at_field IS NULL", [
+        $invitation = $this->ormService->db->row("SELECT id, role, expires_at FROM $this->table_name WHERE email = :email AND tenant = :tenant AND $deleted_at_field IS NULL", [
             'email' => $email,
             'tenant' => $tenant_id
         ]);
@@ -452,7 +452,7 @@ class TenantInvitationsModel extends RbacModel
 
         $this->delete($invitation['id']);
 
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.invitation.accepted', $user, $tenant_id);
+        $this->ormService->events->doEvent('rbac.tenant.invitation.accepted', $user, $tenant_id);
 
     }
 

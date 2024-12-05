@@ -14,22 +14,16 @@ Typically, this would be placed at `config/rbac.php`.
 **Example:**
 
 ```php
+use Bayfront\Bones\Application\Utilities\App;
+
 return [
-    'table_prefix' => 'rbac_',
-    'invitation_duration' => 10080, // Max tenant invitation duration (in minutes), 0 for unlimited: 10080 = 7 days
+    'table_prefix' => 'rbac_', // RBAC database table prefix
     'protected_prefix' => '_app-', // Protected column prefix
+    'invitation_duration' => 10080, // Max tenant invitation duration (in minutes), 0 for unlimited: 10080 = 7 days
     'user' => [
-       'verification' => [
-            'require' => true, // Require user account verification
-            'duration' => 15, // Verification validity duration (in minutes), 0 for unlimited
-            'wait' => 3 // Wait time (in minutes) to wait before creating a new verification, or 0 to disable
-        ],
+        'require_verification' => true, // Require users to be verified to authenticate
         'key' => [
             'max_mins' => 525600, // Max user key duration (in minutes), 0 for unlimited: 525600 = 365 days
-        ],
-        'totp' => [
-            'duration' => 15, // TOTP validity duration (in minutes), 0 for unlimited
-            'wait' => 3, // Wait time (in minutes) to wait before creating a new TOTP, or 0 to disable
         ],
         'token' => [
             'revocable' => true, // Allow access tokens to be revocable? This requires a database query to validate each request

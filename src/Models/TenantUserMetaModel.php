@@ -353,7 +353,7 @@ class TenantUserMetaModel extends RbacModel
     public function findByKey(string $tenant_user_id, string $meta_key): OrmResource
     {
 
-        $meta_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant_user = :tenantUserId AND meta_key = :metaKey", [
+        $meta_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant_user = :tenantUserId AND meta_key = :metaKey", [
             'tenantUserId' => $tenant_user_id,
             'metaKey' => $meta_key
         ]);

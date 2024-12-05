@@ -2,10 +2,7 @@
 
 The `Bayfront\BonesService\Rbac\Models\TenantUserMetaModel` is used to manage tenant user metadata.
 
-This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
-
-The `protected_prefix` [config value](../setup.md#configuration) is used to restrict access to meta keys beginning with a protected prefix.
-This can be overridden using the [withProtectedPrefix](#withprotectedprefix) and [onlyProtectedPrefix](#onlyprotectedprefix) functions.
+This model uses the [HasProtectedPrefix](../traits/hasprotectedprefix.md) and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
 
 Due to the way the field is stored in the database, meta values will always be returned as a string.
 By JSON-encoding and decoding the value, other data types can be preserved.
@@ -32,52 +29,7 @@ Allowed fields read:
 
 Model-specific methods include:
 
-- [withProtectedPrefix](#withprotectedprefix)
-- [onlyProtectedPrefix](#onlyprotectedprefix)
-- [getProtectedPrefix](#getprotectedprefix)
 - [findByKey](#findbykey)
-
-## withProtectedPrefix
-
-**Description:**
-
-Filter next query to include protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- `self`
-
-## onlyProtectedPrefix
-
-**Description:**
-
-Filter next query to include only protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- `self`
-
-## getProtectedPrefix
-
-**Description:**
-
-Get protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- (string)
 
 ## findByKey
 

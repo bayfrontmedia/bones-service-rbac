@@ -248,7 +248,7 @@ class UsersModel extends RbacModel
 
         if (isset($fields['password'])) {
 
-            $salt = $this->rbacService->ormService->db->single("SELECT salt FROM $this->table_name WHERE $this->primary_key = :id", [
+            $salt = $this->ormService->db->single("SELECT salt FROM $this->table_name WHERE $this->primary_key = :id", [
                 'id' => $existing->getPrimaryKey()
             ]);
 
@@ -278,7 +278,7 @@ class UsersModel extends RbacModel
         $this->ormService->events->doEvent('rbac.user.updated', $resource, $previous, $fields);
 
         if (isset($fields['password'])) {
-            $this->rbacService->ormService->events->doEvent('rbac.user.password.updated', $resource);
+            $this->ormService->events->doEvent('rbac.user.password.updated', $resource);
         }
     }
 
@@ -412,7 +412,7 @@ class UsersModel extends RbacModel
     public function findByEmail(string $email): OrmResource
     {
 
-        $user = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email", [
+        $user = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email", [
             'email' => $email
         ]);
 
@@ -442,7 +442,7 @@ class UsersModel extends RbacModel
         ]);
 
         if ($updated === true) {
-            $this->rbacService->ormService->events->doEvent('rbac.user.verified', $email);
+            $this->ormService->events->doEvent('rbac.user.verified', $email);
         }
 
         return $updated;
@@ -466,7 +466,7 @@ class UsersModel extends RbacModel
         $table = $this->getTableName();
         $datetime = date('Y-m-d H:i:s', $timestamp);
 
-        $unverified = $this->rbacService->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND verified_at IS NULL AND deleted_at IS NULL", [
+        $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND verified_at IS NULL AND deleted_at IS NULL", [
             'datetime' => $datetime
         ]);
 
