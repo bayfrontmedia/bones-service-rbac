@@ -19,7 +19,7 @@ abstract class RbacModel extends ResourceModel
         $this->max_limit = $rbacService->getConfig('model.' . $table . '.max_limit', $this->ormService->getConfig('max_limit', -1));
         $this->max_related_depth = $rbacService->getConfig('model.' . $table . '.max_related_depth', $this->ormService->getConfig('max_related_depth', 3));
 
-        parent::__construct($this->ormService);
+        parent::__construct($rbacService->ormService);
     }
 
 }
