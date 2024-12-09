@@ -277,6 +277,10 @@ class UsersModel extends RbacModel
 
         $this->ormService->events->doEvent('rbac.user.updated', $resource, $previous, $fields);
 
+        if (isset($fields['email'])) {
+            $this->ormService->events->doEvent('rbac.user.email.updated', $resource);
+        }
+
         if (isset($fields['password'])) {
             $this->ormService->events->doEvent('rbac.user.password.updated', $resource);
         }
@@ -427,6 +431,23 @@ class UsersModel extends RbacModel
     // ------------------------Verification -------------------------
 
     /**
+     * Update verified_at field to null.
+     *
+     * @param string $email
+     * @return bool
+     */
+    public function unverify(string $email): bool
+    {
+
+        return $this->ormService->db->update($this->table_name, [
+            'verified_at' => null
+        ], [
+            'email' => $email
+        ]);
+
+    }
+
+    /**
      * Update verified_at field to current datetime.
      *
      * @param string $email
@@ -450,7 +471,8 @@ class UsersModel extends RbacModel
     }
 
     /**
-     * Soft-delete all unverified users created before timestamp.
+     * Soft-delete all unverified users created and never updated,
+     * or last updated before timestamp.
      *
      * @param int $timestamp
      * @return void
@@ -466,7 +488,7 @@ class UsersModel extends RbacModel
         $table = $this->getTableName();
         $datetime = date('Y-m-d H:i:s', $timestamp);
 
-        $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND verified_at IS NULL AND deleted_at IS NULL", [
+        $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND (updated_at IS NULL OR updated_at < :datetime) AND verified_at IS NULL AND deleted_at IS NULL", [
             'datetime' => $datetime
         ]);
 

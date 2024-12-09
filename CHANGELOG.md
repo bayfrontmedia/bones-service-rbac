@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `EmailAuthenticator` and related events.
 - Added password request functions.
 - Added `Totp` class and migrated user MFA functions to TOTP.
+- Added `unverify` method to `UsersModel`.
+- Added `rbac.user.email.updated` event.
 
 ### Changed
 

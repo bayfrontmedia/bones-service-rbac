@@ -33,6 +33,9 @@ service:
   representing the updated resource,
   an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
   parameters.
+- `rbac.user.email.updated`: Executed when a [user's email](models/users.md) is updated.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the
+  updated user is passed as a parameter.
 - `rbac.user.password.updated`: Executed when a [user's password](models/users.md) is updated.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the
   updated user is passed as a parameter.

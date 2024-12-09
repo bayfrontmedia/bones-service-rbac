@@ -41,6 +41,7 @@ Model-specific methods include:
 
 - [findByEmail](#findbyemail)
 - [verify](#verify)
+- [unverify](#unverify)
 - [deleteUnverified](#deleteunverified)
 
 ## findByEmail
@@ -80,11 +81,26 @@ The `rbac.user.verified` [event](../events.md) is executed.
 
 - (bool)
 
+## unverify
+
+**Description:**
+
+Update `verified_at` field to `null.
+
+**Parameters:**
+
+- `$email` (string)
+
+**Returns:**
+
+- (bool)
+
 ## deleteUnverified
 
 **Description:**
 
-Soft-delete all unverified users created before timestamp.
+Soft-delete all unverified users created and never updated,
+or last updated before timestamp.
 
 **Parameters:**
 
