@@ -3,19 +3,8 @@
 The following [events](https://github.com/bayfrontmedia/bones/blob/master/docs/services/events.md) are added by this
 service:
 
-- `rbac.auth.success`: Executed on successful user [authentication](authentication/README.md) for all authenticators
-  except for [EmailAuthenticator](authentication/emailauthenticator.md).
-  A [User](user.md) instance is passed as a parameter.
-- `rbac.auth.fail.key`: Executed on unsuccessful [user key authentication](authentication/userkeyauthenticator.md)
-  attempt. No parameters are passed.
-- `rbac.auth.fail.token`: Executed on unsuccessful [token authentication](authentication/tokenauthenticator.md) attempt.
-  No parameters are passed.
-- `rbac.auth.fail.email`: Executed on unsuccessful [email authentication](authentication/emailauthenticator.md) attempt.
-  The email address is passed as a parameter.
-- `rbac.auth.fail.password`: Executed on unsuccessful [password authentication](authentication/passwordauthenticator.md)
-  attempt. The email address is passed as a parameter.
-- `rbac.auth.fail.totp`: Executed on unsuccessful [TOTP authentication](authentication/totpauthenticator.md) attempt.
-  The email address is passed as a parameter.
+- `rbac.start`: Executes in the [RbacService](rbacservice.md) constructor as the first event available to this service. 
+  The `RbacService` instance is passed as a parameter.
 - `rbac.tenant.invitation.created`: Executed on creation of a [tenant invitation](models/tenantinvitations.md).
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the created invitation is passed as a parameter.
@@ -23,22 +12,31 @@ service:
   accepted.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the user and the tenant ID are passed as parameters.
-- `rbac.tenant.user.created`: Executed on creation of a [tenant user](models/tenantusers.md).
-  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
-  representing the created tenant user is passed as a parameter.
-- `rbac.user.verified`: Executed when a [user is verified](models/users.md#verify). The user's email is passed as a
-  parameter.
-- `rbac.tenant.user.updated`: Executed when a [tenant user](models/tenantusers.md) is updated.
+- `rbac.user.created`: Executed when a [user is created](models/users.md). An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the created user
+  is passed as a parameter.
+- `rbac.user.updated`: Executed when a [user is updated](models/users.md).
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the updated resource,
   an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
   parameters.
+- `rbac.user.deleted`: Executed when a [user is deleted](models/users.md). An OrmResource representing the pre-deleted resource
+  is passed as a parameter.
+- `rbac.user.verified`: Executed when a [user is verified](models/users.md#verify). The user's email is passed as a
+  parameter.
 - `rbac.user.email.updated`: Executed when a [user's email](models/users.md) is updated.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the
   updated user is passed as a parameter.
 - `rbac.user.password.updated`: Executed when a [user's password](models/users.md) is updated.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the
   updated user is passed as a parameter.
+- `rbac.tenant.user.created`: Executed on creation of a [tenant user](models/tenantusers.md).
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the created tenant user is passed as a parameter.
+- `rbac.tenant.user.updated`: Executed when a [tenant user](models/tenantusers.md) is updated.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the updated resource,
+  an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
+  parameters.
 - `rbac.tenant.user.deleted`: Executed when a [tenant user](models/tenantusers.md) is deleted.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the pre-deleted resource
@@ -60,13 +58,3 @@ service:
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the pre-deleted resource
   is passed as a parameter.
-- `rbac.user.password.request`: Executed on creation of a [password request](models/usermeta.md#createpasswordrequest).
-  The user ID and [Totp](totp.md) instance are passed as parameters.
-- `rbac.user.verification.request`: Executed on creation of
-  a [user verification request](models/usermeta.md#createuserverification).
-  The user ID and [Totp](totp.md) instance are passed as parameters.
-- `rbac.user.totp.created`: Executed when a [user TOTP](models/usermeta.md#createusertotp) is created.
-  The user ID and [Totp](totp.md) instance are passed as parameters.
-- `rbac.token.authenticate`: Executed within the [TokenAuthenticator](authentication/tokenauthenticator.md)
-  after a token has been authenticated, but before authenticating the user. The decoded token and user ID are passed as
-  parameters.

@@ -21,7 +21,7 @@ Allowed fields write:
 
 Unique fields:
 
-- `domain`
+- `domain` (Will be transformed to lowercase URL-friendly slug when created/updated)
 
 Allowed fields read:
 
