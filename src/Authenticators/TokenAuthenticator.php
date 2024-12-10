@@ -196,8 +196,6 @@ class TokenAuthenticator
 
         }
 
-        $this->rbacService->ormService->events->doEvent('rbac.token.authenticate', $decoded, $user_id);
-
         return $user_id;
 
     }
