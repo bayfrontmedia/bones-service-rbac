@@ -17,6 +17,7 @@ Methods include:
 - [isAdmin](#isadmin)
 - [isEnabled](#isenabled)
 - [isVerified](#isverified)
+- [getTenantInvitations](#gettenantinvitations)
 - [getTenants](#gettenants)
 - [inTenant](#intenant)
 - [getOwnedTenants](#getownedtenants)
@@ -174,6 +175,34 @@ Is user verified?
 **Parameters:**
 
 - (none)
+
+**Returns:**
+
+- (bool)
+
+## getTenantInvitations
+
+**Description:**
+
+Get all user tenant invitations.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (array)
+
+## hasTenantInvitation
+
+**Description:**
+
+Does user have invitation ID?
+
+**Parameters:**
+
+- `$invitation_id` (string)
 
 **Returns:**
 

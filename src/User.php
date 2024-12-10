@@ -10,6 +10,7 @@ use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Utilities\Parsers\QueryParser;
 use Bayfront\BonesService\Rbac\Models\PermissionsModel;
+use Bayfront\BonesService\Rbac\Models\TenantInvitationsModel;
 use Bayfront\BonesService\Rbac\Models\TenantRolePermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantUserMetaModel;
 use Bayfront\BonesService\Rbac\Models\TenantUserRolesModel;
@@ -146,6 +147,76 @@ class User
     public function isVerified(): bool
     {
         return Arr::get($this->user, 'verified_at') !== null;
+    }
+
+    /*
+     * |--------------------------------------------------------------------------
+     * | Tenant invitations
+     * |--------------------------------------------------------------------------
+     */
+
+    private ?array $invitations = null;
+
+    /**
+     * @return void
+     * @throws InvalidRequestException
+     * @throws UnexpectedException
+     */
+    private function defineInvitations(): void
+    {
+
+        if (is_array($this->invitations)) {
+            return;
+        }
+
+        $tenantInvitationsModel = new TenantInvitationsModel($this->rbacService);
+
+        $invitations = $tenantInvitationsModel->list(new QueryParser([
+            'fields' => [
+                '*.*'
+            ],
+            'filter' => [
+                [
+                    'email' => [
+                        'eq' => $this->getEmail()
+                    ]
+                ]
+            ]
+        ]), true);
+
+        $this->invitations = $invitations->list();
+
+    }
+
+    /**
+     * Get all user tenant invitations.
+     *
+     * @return array
+     * @throws UnexpectedException
+     */
+    public function getTenantInvitations(): array
+    {
+
+        try {
+            $this->defineInvitations();
+        } catch (OrmServiceException) {
+            throw new UnexpectedException('Unable to retrieve user tenant invitations');
+        }
+
+        return $this->invitations;
+
+    }
+
+    /**
+     * Does user have invitation ID?
+     *
+     * @param string $invitation_id
+     * @return bool
+     * @throws UnexpectedException
+     */
+    public function hasTenantInvitation(string $invitation_id): bool
+    {
+        return in_array($invitation_id, Arr::pluck($this->getTenantInvitations(), 'id'));
     }
 
     /*
