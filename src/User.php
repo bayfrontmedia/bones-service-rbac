@@ -466,6 +466,19 @@ class User
         return Arr::hasAnyValues(Arr::pluck($this->getRoles($tenant_id), 'id'), $role_ids);
     }
 
+    /**
+     * Does user have role?
+     *
+     * @param string $tenant_id
+     * @param string $role_id
+     * @return bool
+     * @throws UnexpectedException
+     */
+    public function haveRole(string $tenant_id, string $role_id): bool
+    {
+        return in_array($role_id, Arr::pluck($this->getRoles($tenant_id), 'id'));
+    }
+
     /*
      * |--------------------------------------------------------------------------
      * | Tenant teams
@@ -556,6 +569,19 @@ class User
     public function inAnyTeams(string $tenant_id, array $team_ids): bool
     {
         return Arr::hasAnyValues(Arr::pluck($this->getTeams($tenant_id), 'id'), $team_ids);
+    }
+
+    /**
+     * Is user in team?
+     *
+     * @param string $tenant_id
+     * @param string $team_id
+     * @return bool
+     * @throws UnexpectedException
+     */
+    public function inTeam(string $tenant_id, string $team_id): bool
+    {
+        return in_array($team_id, Arr::pluck($this->getTeams($tenant_id), 'id'));
     }
 
     /*

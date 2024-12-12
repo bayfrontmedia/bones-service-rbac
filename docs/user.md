@@ -27,9 +27,11 @@ Methods include:
 - [getRoles](#getroles)
 - [hasAllRoles](#hasallroles)
 - [hasAnyRoles](#hasanyroles)
+- [haveRole](#haverole)
 - [getTeams](#getteams)
 - [inAllTeams](#inallteams)
 - [inAnyTeams](#inanyteams)
+- [inTeam](#inteam)
 - [getPermissions](#getpermissions)
 - [hasAllPermissions](#hasallpermissions)
 - [hasAnyPermissions](#hasanypermissions)
@@ -372,6 +374,25 @@ Does user have any roles for tenant?
 
 - `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
 
+## haveRole
+
+**Description:**
+
+Does user have role?
+
+**Parameters:**
+
+- `$tenant_id` (string)
+- `$role_id` (string)
+
+**Returns:**
+
+- (bool)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
 ## getTeams
 
 **Description:**
@@ -419,6 +440,25 @@ Is user in any teams for tenant?
 
 - `$tenant_id` (string)
 - `$team_ids` (array): Array of team ID's
+
+**Returns:**
+
+- (bool)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## inTeam
+
+**Description:**
+
+Is user in team?
+
+**Parameters:**
+
+- `$tenant_id` (string)
+- `$team_id` (string)
 
 **Returns:**
 
