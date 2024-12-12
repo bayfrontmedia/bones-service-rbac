@@ -190,6 +190,16 @@ class UsersModel extends RbacModel
 
         $fields['password'] = App::createPasswordHash($this->ormService->filters->doFilter('rbac.user.password', Arr::get($fields, 'password', '')), $fields['salt']);
 
+        if (isset($fields['meta']) && is_array($fields['meta'])) {
+
+            foreach ($fields['meta'] as $k => $v) {
+                if ($v === null) {
+                    unset($fields['meta'][$k]);
+                }
+            }
+
+        }
+
         return $fields;
     }
 
@@ -257,6 +267,25 @@ class UsersModel extends RbacModel
             }
 
             $fields['password'] = App::createPasswordHash($this->ormService->filters->doFilter('rbac.user.password', $fields['password']), $salt);
+
+        }
+
+        /** @noinspection DuplicatedCode */
+        if (isset($fields['meta']) && is_array($fields['meta'])) {
+
+            $meta = $this->ormService->db->single("SELECT meta FROM $this->table_name WHERE $this->primary_key = :id", [
+                'id' => $existing->getPrimaryKey()
+            ]);
+
+            $meta = array_merge($this->jsonDecode($meta), $fields['meta']);
+
+            foreach ($meta as $k => $v) {
+                if ($v === null) {
+                    unset($meta[$k]);
+                }
+            }
+
+            $fields['meta'] = $meta;
 
         }
 

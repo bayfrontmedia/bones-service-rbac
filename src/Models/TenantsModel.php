@@ -178,6 +178,17 @@ class TenantsModel extends RbacModel
     protected function onCreating(array $fields): array
     {
         $fields['id'] = $this->createUuid();
+
+        if (isset($fields['meta']) && is_array($fields['meta'])) {
+
+            foreach ($fields['meta'] as $k => $v) {
+                if ($v === null) {
+                    unset($fields['meta'][$k]);
+                }
+            }
+
+        }
+
         return $fields;
     }
 
@@ -265,6 +276,25 @@ class TenantsModel extends RbacModel
             if (!$tenantUsersModel->inTenant($existing->getPrimaryKey(), $fields['owner'])) {
                 throw new InvalidFieldException('Unable to update tenant: Owner must exist as a tenant user');
             }
+
+        }
+
+        /** @noinspection DuplicatedCode */
+        if (isset($fields['meta']) && is_array($fields['meta'])) {
+
+            $meta = $this->ormService->db->single("SELECT meta FROM $this->table_name WHERE $this->primary_key = :id", [
+                'id' => $existing->getPrimaryKey()
+            ]);
+
+            $meta = array_merge($this->jsonDecode($meta), $fields['meta']);
+
+            foreach ($meta as $k => $v) {
+                if ($v === null) {
+                    unset($meta[$k]);
+                }
+            }
+
+            $fields['meta'] = $meta;
 
         }
 
