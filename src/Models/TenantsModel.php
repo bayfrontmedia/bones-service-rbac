@@ -290,6 +290,8 @@ class TenantsModel extends RbacModel
 
             $meta = array_merge($this->jsonDecode($meta), $fields['meta']);
 
+            ksort($meta);
+
             foreach ($meta as $k => $v) {
                 if ($v === null) {
                     unset($meta[$k]);
@@ -297,8 +299,6 @@ class TenantsModel extends RbacModel
             }
 
             $fields['meta'] = $meta;
-
-            ksort($fields['meta'], SORT_STRING);
 
         }
 
