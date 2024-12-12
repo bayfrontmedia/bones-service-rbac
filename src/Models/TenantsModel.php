@@ -187,6 +187,8 @@ class TenantsModel extends RbacModel
                 }
             }
 
+            ksort($fields['meta']);
+
         }
 
         return $fields;
@@ -295,6 +297,8 @@ class TenantsModel extends RbacModel
             }
 
             $fields['meta'] = $meta;
+
+            ksort($fields['meta']);
 
         }
 
