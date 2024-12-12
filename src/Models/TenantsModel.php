@@ -298,7 +298,7 @@ class TenantsModel extends RbacModel
 
             $fields['meta'] = $meta;
 
-            ksort($fields['meta']);
+            ksort($fields['meta'], SORT_STRING);
 
         }
 
