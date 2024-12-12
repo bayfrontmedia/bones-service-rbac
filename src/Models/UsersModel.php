@@ -197,9 +197,6 @@ class UsersModel extends RbacModel
                     unset($fields['meta'][$k]);
                 }
             }
-
-            ksort($fields['meta']);
-
         }
 
         return $fields;
@@ -238,11 +235,19 @@ class UsersModel extends RbacModel
      */
     protected function onRead(array $fields): array
     {
-        return $this->transform($fields, [
+        $fields = $this->transform($fields, [
             'meta' => [$this, 'jsonDecode'],
             'admin' => [$this, 'boolean'],
             'enabled' => [$this, 'boolean']
         ]);
+
+        if (isset($fields['meta'])) {
+            $meta = Arr::dot($fields['meta']);
+            ksort($meta);
+            $fields['meta'] = Arr::undot($meta);
+        }
+
+        return $fields;
     }
 
     /**
@@ -280,8 +285,6 @@ class UsersModel extends RbacModel
             ]);
 
             $meta = array_merge($this->jsonDecode($meta), $fields['meta']);
-
-            ksort($meta);
 
             foreach ($meta as $k => $v) {
                 if ($v === null) {

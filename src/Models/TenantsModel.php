@@ -2,6 +2,7 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
+use Bayfront\ArrayHelpers\Arr;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
@@ -187,8 +188,6 @@ class TenantsModel extends RbacModel
                 }
             }
 
-            ksort($fields['meta']);
-
         }
 
         return $fields;
@@ -245,10 +244,18 @@ class TenantsModel extends RbacModel
      */
     protected function onRead(array $fields): array
     {
-        return $this->transform($fields, [
+        $fields = $this->transform($fields, [
             'meta' => [$this, 'jsonDecode'],
             'enabled' => [$this, 'boolean']
         ]);
+
+        if (isset($fields['meta'])) {
+            $meta = Arr::dot($fields['meta']);
+            ksort($meta);
+            $fields['meta'] = Arr::undot($meta);
+        }
+
+        return $fields;
     }
 
     /**
@@ -289,8 +296,6 @@ class TenantsModel extends RbacModel
             ]);
 
             $meta = array_merge($this->jsonDecode($meta), $fields['meta']);
-
-            ksort($meta);
 
             foreach ($meta as $k => $v) {
                 if ($v === null) {
