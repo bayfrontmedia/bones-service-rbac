@@ -474,7 +474,7 @@ class User
      * @return bool
      * @throws UnexpectedException
      */
-    public function haveRole(string $tenant_id, string $role_id): bool
+    public function hasRole(string $tenant_id, string $role_id): bool
     {
         return in_array($role_id, Arr::pluck($this->getRoles($tenant_id), 'id'));
     }

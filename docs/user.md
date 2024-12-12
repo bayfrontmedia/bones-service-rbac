@@ -27,7 +27,7 @@ Methods include:
 - [getRoles](#getroles)
 - [hasAllRoles](#hasallroles)
 - [hasAnyRoles](#hasanyroles)
-- [haveRole](#haverole)
+- [hasRole](#hasrole)
 - [getTeams](#getteams)
 - [inAllTeams](#inallteams)
 - [inAnyTeams](#inanyteams)
@@ -374,7 +374,7 @@ Does user have any roles for tenant?
 
 - `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
 
-## haveRole
+## hasRole
 
 **Description:**
 
