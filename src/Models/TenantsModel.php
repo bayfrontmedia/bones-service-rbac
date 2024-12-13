@@ -282,7 +282,7 @@ class TenantsModel extends RbacModel
                 throw new UnexpectedException('Unable to update tenant: Error validating tenant owner');
             }
 
-            if (!$tenantUsersModel->inTenant($existing->getPrimaryKey(), $fields['owner'])) {
+            if (!$tenantUsersModel->userInTenant($existing->getPrimaryKey(), $fields['owner'])) {
                 throw new InvalidFieldException('Unable to update tenant: Owner must exist as a tenant user');
             }
 

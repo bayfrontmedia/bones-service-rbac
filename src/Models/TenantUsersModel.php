@@ -389,12 +389,29 @@ class TenantUsersModel extends RbacModel
      * @param string $user_id
      * @return bool
      */
-    public function inTenant(string $tenant_id, string $user_id): bool
+    public function userInTenant(string $tenant_id, string $user_id): bool
     {
 
         return $this->ormService->db->exists($this->table_name, [
             'tenant' => $tenant_id,
             'user' => $user_id
+        ]);
+
+    }
+
+    /**
+     * Is tenant user in tenant?
+     *
+     * @param string $tenant_id
+     * @param string $tenant_user_id
+     * @return bool
+     */
+    public function tenantUserInTenant(string $tenant_id, string $tenant_user_id): bool
+    {
+
+        return $this->ormService->db->exists($this->table_name, [
+            'tenant' => $tenant_id,
+            'id' => $tenant_user_id
         ]);
 
     }
