@@ -372,40 +372,22 @@ class TenantInvitationsModel extends RbacModel
     }
 
     /**
-     * Accept tenant invitation using email and tenant ID.
+     * Accept invitation.
      *
-     * Adds non-deleted user to tenant with invited role and deletes invitation.
-     * The rbac.tenant.invitation.accepted event is executed on success.
-     *
-     * @param string $email
-     * @param string $tenant_id
+     * @param array $invitation (Keys: id, email, tenant, role, expires_at)
      * @return void
      * @throws DoesNotExistException
      * @throws InvalidFieldException
      * @throws UnexpectedException
      */
-    public function accept(string $email, string $tenant_id): void
+    private function acceptInvitation(array $invitation): void
     {
-
-        // Get invitation
-
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $invitation = $this->ormService->db->row("SELECT id, role, expires_at FROM $this->table_name WHERE email = :email AND tenant = :tenant AND $deleted_at_field IS NULL", [
-            'email' => $email,
-            'tenant' => $tenant_id
-        ]);
-
-        if (!$invitation) {
-            throw new DoesNotExistException('Unable to verify tenant invitation: Invitation does not exist');
-        }
 
         // Delete if expired
 
         if (Time::inPast($invitation['expires_at'])) {
 
             $this->delete($invitation['id']);
-
             throw new DoesNotExistException('Unable to verify tenant invitation: Invitation is expired');
 
         }
@@ -414,7 +396,7 @@ class TenantInvitationsModel extends RbacModel
 
         $usersModel = new UsersModel($this->rbacService);
 
-        $user = $usersModel->findByEmail($email);
+        $user = $usersModel->findByEmail($invitation['email']);
 
         // Add user to tenant
 
@@ -423,13 +405,13 @@ class TenantInvitationsModel extends RbacModel
         try {
 
             $tu = $tenantUsersModel->create([
-                'tenant' => $tenant_id,
+                'tenant' => $invitation['tenant'],
                 'user' => $user->getPrimaryKey()
             ]);
 
         } catch (AlreadyExistsException) { // User has already been added to tenant
 
-            $tu = $tenantUsersModel->findByUserId($tenant_id, $user->getPrimaryKey());
+            $tu = $tenantUsersModel->findByUserId($invitation['tenant'], $user->getPrimaryKey());
 
         }
 
@@ -452,7 +434,71 @@ class TenantInvitationsModel extends RbacModel
 
         $this->delete($invitation['id']);
 
-        $this->ormService->events->doEvent('rbac.tenant.invitation.accepted', $user, $tenant_id);
+        $this->ormService->events->doEvent('rbac.tenant.invitation.accepted', $user, $invitation['tenant']);
+
+    }
+
+    /**
+     * Accept tenant invitation using invitation ID.
+     *
+     * Adds non-deleted user to tenant with invited role and deletes invitation.
+     * The rbac.tenant.invitation.accepted event is executed on success.
+     *
+     * @param string $invitation_id
+     * @return void
+     * @throws DoesNotExistException
+     * @throws InvalidFieldException
+     * @throws UnexpectedException
+     */
+    public function acceptFromId(string $invitation_id): void
+    {
+
+        // Get invitation
+
+        $deleted_at_field = $this->getDeletedAtField();
+
+        $invitation = $this->ormService->db->row("SELECT id, email, tenant, role, expires_at FROM $this->table_name WHERE id = :id AND $deleted_at_field IS NULL", [
+            'id' => $invitation_id
+        ]);
+
+        if (!$invitation) {
+            throw new DoesNotExistException('Unable to verify tenant invitation: Invitation does not exist');
+        }
+
+        $this->acceptInvitation($invitation);
+
+    }
+
+    /**
+     * Accept tenant invitation using email and tenant ID.
+     *
+     * Adds non-deleted user to tenant with invited role and deletes invitation.
+     * The rbac.tenant.invitation.accepted event is executed on success.
+     *
+     * @param string $email
+     * @param string $tenant_id
+     * @return void
+     * @throws DoesNotExistException
+     * @throws InvalidFieldException
+     * @throws UnexpectedException
+     */
+    public function acceptFromEmail(string $email, string $tenant_id): void
+    {
+
+        // Get invitation
+
+        $deleted_at_field = $this->getDeletedAtField();
+
+        $invitation = $this->ormService->db->row("SELECT id, email, tenant, role, expires_at FROM $this->table_name WHERE email = :email AND tenant = :tenant AND $deleted_at_field IS NULL", [
+            'email' => $email,
+            'tenant' => $tenant_id
+        ]);
+
+        if (!$invitation) {
+            throw new DoesNotExistException('Unable to verify tenant invitation: Invitation does not exist');
+        }
+
+        $this->acceptInvitation($invitation);
 
     }
 

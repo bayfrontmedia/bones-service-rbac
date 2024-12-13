@@ -34,7 +34,8 @@ Allowed fields read:
 Model-specific methods include:
 
 - [findByEmail](#findbyemail)
-- [accept](#accept)
+- [acceptFromId](#acceptfromid)
+- [acceptFromEmail](#acceptfromemail)
 
 ## findByEmail
 
@@ -58,7 +59,30 @@ Can be used with the `SoftDeletes` trait trashed filters.
 - `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
 - `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
 
-## accept
+## acceptFromId
+
+**Description:**
+
+Accept tenant invitation using invitation ID.
+
+Adds non-deleted user to tenant with invited role and deletes invitation.
+The `rbac.tenant.invitation.accepted` [event](../events.md) is executed on success.
+
+**Parameters:**
+
+- `$invitation_id` (string)
+
+**Returns:**
+
+- (void)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
+- `Bayfront\BonesService\Orm\Exceptions\InvalidFieldException`
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## acceptFromEmail
 
 **Description:**
 
