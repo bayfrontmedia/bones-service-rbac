@@ -432,7 +432,7 @@ class TenantInvitationsModel extends RbacModel
 
         // Delete invitation
 
-        $this->delete($invitation['id']);
+        $this->hardDelete($invitation['id']);
 
         $this->ormService->events->doEvent('rbac.tenant.invitation.accepted', $user, $invitation['tenant']);
 
@@ -441,7 +441,7 @@ class TenantInvitationsModel extends RbacModel
     /**
      * Accept tenant invitation using invitation ID.
      *
-     * Adds non-deleted user to tenant with invited role and deletes invitation.
+     * Adds non-deleted user to tenant with invited role and hard-deletes invitation.
      * The rbac.tenant.invitation.accepted event is executed on success.
      *
      * @param string $invitation_id
@@ -472,7 +472,7 @@ class TenantInvitationsModel extends RbacModel
     /**
      * Accept tenant invitation using email and tenant ID.
      *
-     * Adds non-deleted user to tenant with invited role and deletes invitation.
+     * Adds non-deleted user to tenant with invited role and hard-deletes invitation.
      * The rbac.tenant.invitation.accepted event is executed on success.
      *
      * @param string $email

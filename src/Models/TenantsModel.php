@@ -222,6 +222,8 @@ class TenantsModel extends RbacModel
 
         }
 
+        $this->ormService->events->doEvent('rbac.tenant.created', $resource);
+
     }
 
     /**
@@ -321,9 +323,7 @@ class TenantsModel extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        if (in_array('owner', $fields)) {
-            $this->ormService->events->doEvent('rbac.tenant.owner.updated', $resource, $previous, $fields);
-        }
+        $this->ormService->events->doEvent('rbac.tenant.updated', $resource, $previous, $fields);
     }
 
     /**
@@ -374,7 +374,7 @@ class TenantsModel extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.deleted', $resource);
     }
 
     /**

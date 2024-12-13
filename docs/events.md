@@ -8,7 +8,7 @@ service:
 - `rbac.tenant.invitation.created`: Executed on creation of a [tenant invitation](models/tenantinvitations.md).
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the created invitation is passed as a parameter.
-- `rbac.tenant.invitation.accepted`: Executed when a [tenant invitation](models/tenantinvitations.md#accept) is
+- `rbac.tenant.invitation.accepted`: Executed when a [tenant invitation](models/tenantinvitations.md) is
   accepted.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the user and the tenant ID are passed as parameters.
@@ -41,11 +41,15 @@ service:
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the pre-deleted resource
   is passed as a parameter.
-- `rbac.tenant.owner.updated`: Executed when the [tenant owner](models/tenants.md) is updated.
+- `rbac.tenant.created`: Executed when a [tenant is created](models/tenants.md). An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the created tenant
+  is passed as a parameter.
+- `rbac.tenant.updated`: Executed when a [tenant is updated](models/tenants.md).
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the updated resource,
   an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
   parameters.
+- `rbac.tenant.deleted`: Executed when a [tenant is deleted](models/tenants.md). An OrmResource representing the pre-deleted resource
+  is passed as a parameter.
 - `rbac.user.key.created`: Executed on creation of a [user key](models/userkeys.md).
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the created user key is passed as a parameter.

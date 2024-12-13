@@ -65,7 +65,7 @@ Can be used with the `SoftDeletes` trait trashed filters.
 
 Accept tenant invitation using invitation ID.
 
-Adds non-deleted user to tenant with invited role and deletes invitation.
+Adds non-deleted user to tenant with invited role and hard-deletes invitation.
 The `rbac.tenant.invitation.accepted` [event](../events.md) is executed on success.
 
 **Parameters:**
@@ -88,7 +88,7 @@ The `rbac.tenant.invitation.accepted` [event](../events.md) is executed on succe
 
 Accept tenant invitation using email and tenant ID.
 
-Adds non-deleted user to tenant with invited role and deletes invitation.
+Adds non-deleted user to tenant with invited role and hard-deletes invitation.
 The `rbac.tenant.invitation.accepted` [event](../events.md) is executed on success.
 
 **Parameters:**
