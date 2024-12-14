@@ -38,7 +38,6 @@ Allowed fields read:
 - `created_at`
 - `updated_at`
 - `verified_at`
-- `deleted_at`
 
 Model-specific methods include:
 

@@ -25,7 +25,6 @@ Allowed fields read:
 - `meta_value`
 - `created_at`
 - `updated_at`
-- `deleted_at`
 
 Model-specific properties (string) used to return protected meta keys for TOTP's:
 

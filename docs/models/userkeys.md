@@ -36,7 +36,6 @@ Allowed fields read:
 - `last_used`
 - `created_at`
 - `updated_at`
-- `deleted_at`
 
 Model-specific methods include:
 

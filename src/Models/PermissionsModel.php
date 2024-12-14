@@ -104,8 +104,7 @@ class PermissionsModel extends RbacModel
         'name',
         'description',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**

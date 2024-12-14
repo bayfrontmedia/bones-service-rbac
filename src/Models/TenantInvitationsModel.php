@@ -119,8 +119,7 @@ class TenantInvitationsModel extends RbacModel
         'role',
         'expires_at',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**

@@ -117,8 +117,7 @@ class UsersModel extends RbacModel
         'enabled',
         'created_at',
         'updated_at',
-        'verified_at',
-        'deleted_at'
+        'verified_at'
     ];
 
     /**

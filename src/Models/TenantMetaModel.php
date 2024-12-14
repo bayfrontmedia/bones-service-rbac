@@ -115,8 +115,7 @@ class TenantMetaModel extends RbacModel
         'meta_key',
         'meta_value',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
