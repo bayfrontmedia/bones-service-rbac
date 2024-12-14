@@ -180,13 +180,18 @@ class TenantsModel extends RbacModel
     {
         $fields['id'] = $this->createUuid();
 
+        /** @noinspection DuplicatedCode */
         if (isset($fields['meta']) && is_array($fields['meta'])) {
 
-            foreach ($fields['meta'] as $k => $v) {
+            $meta = Arr::dot($fields['meta']);
+
+            foreach ($meta as $k => $v) {
                 if ($v === null) {
-                    unset($fields['meta'][$k]);
+                    unset($meta[$k]);
                 }
             }
+
+            $fields['meta'] = Arr::undot($meta);
 
         }
 
@@ -297,7 +302,7 @@ class TenantsModel extends RbacModel
                 'id' => $existing->getPrimaryKey()
             ]);
 
-            $meta = array_merge($this->jsonDecode($meta), $fields['meta']);
+            $meta = array_merge(Arr::dot($this->jsonDecode($meta)), Arr::dot($fields['meta']));
 
             foreach ($meta as $k => $v) {
                 if ($v === null) {
@@ -305,7 +310,7 @@ class TenantsModel extends RbacModel
                 }
             }
 
-            $fields['meta'] = $meta;
+            $fields['meta'] = Arr::undot($meta);
 
         }
 
