@@ -28,8 +28,8 @@
   },
   "require": {
     "php": ">=8.0",
-    "bayfrontmedia/bones": "^5.3",
-    "bayfrontmedia/bones-service-orm": "v1.0.0-beta.1",
+    "bayfrontmedia/bones": "dev-dev",
+    "bayfrontmedia/bones-service-orm": "dev-dev",
     "bayfrontmedia/php-array-helpers": "^2.0",
     "bayfrontmedia/php-jwt": "^2.0",
     "bayfrontmedia/php-string-helpers": "^2.2",
