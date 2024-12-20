@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
-## [1.0.0-beta.1] - Upcoming
+## [1.0.0-beta.1] - 2024.12.20
 
 ### Added
 
@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Totp` class and migrated user MFA functions to TOTP.
 - Added `unverify` method to `UsersModel`.
 - Added `rbac.user.email.updated` event.
+- Added `rbac.token.authenticate` event.
+- Added tenant invitation, role and team-related methods to `User` class.
+- Added tenant-related events.
+- Added support for multidimensional meta keys.
 
 ### Changed
 
@@ -34,10 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `UserMfaAuthenticator` and related events.
 - Removed user key functions from `UsersModel` in favor of `userTotp` methods in `UserMetaModel`.
+- Removed `deleted_at` as a readable field for all models.
 
 ### Fixed
 
 - Fixed bug when updating user key during authentication.
+- Miscellaneous bugfixes
 
 ## [1.0.0-beta] - 2024.11.29
 
