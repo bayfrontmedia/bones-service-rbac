@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantRoles
+# [RBAC service](../README.md) > [Models](README.md) > TenantRolesModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantRoles` model is used to manage tenant roles.
+The `Bayfront\BonesService\Rbac\Models\TenantRolesModel` is used to manage tenant roles.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 
@@ -22,7 +22,6 @@ Allowed fields read:
 - `description`
 - `created_at`
 - `updated_at`
-- `deleted_at`
 
 Model-specific methods include:
 

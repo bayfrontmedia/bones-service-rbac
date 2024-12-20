@@ -2,16 +2,18 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
+use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
+use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
+use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant user roles model.
- */
-class TenantUserRoles extends RbacModel
+class TenantRolesModel extends RbacModel
 {
+
+    use SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -22,7 +24,7 @@ class TenantUserRoles extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USER_ROLES);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_ROLES);
     }
 
     /**
@@ -57,20 +59,31 @@ class TenantUserRoles extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant_user' => TenantUsers::class,
-        'role' => TenantRoles::class
+        'tenant' => TenantsModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'tenant',
+        'name'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant_user' => 'required|isString|lengthEquals:36',
-        'role' => 'required|isString|lengthEquals:36'
+        'tenant' => 'isString|lengthEquals:36',
+        'name' => 'isString|maxLength:255',
+        'description' => 'isString|maxLength:255'
     ];
 
     /**
@@ -83,8 +96,8 @@ class TenantUserRoles extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'tenant_user',
-            'role'
+            'tenant',
+            'name'
         ]
     ];
 
@@ -95,8 +108,9 @@ class TenantUserRoles extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'tenant_user',
-        'role',
+        'tenant',
+        'name',
+        'description',
         'created_at',
         'updated_at'
     ];
@@ -111,8 +125,9 @@ class TenantUserRoles extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'tenant_user',
-        'role'
+        'tenant',
+        'name',
+        'description'
     ];
 
     /**
@@ -289,8 +304,51 @@ class TenantUserRoles extends RbacModel
 
     /*
      * |--------------------------------------------------------------------------
+     * | Traits
+     * |--------------------------------------------------------------------------
+     */
+
+    /**
+     * Trait: SoftDeletes
+     *
+     * @inheritDoc
+     */
+    protected function getDeletedAtField(): string
+    {
+        return 'deleted_at';
+    }
+
+    /*
+     * |--------------------------------------------------------------------------
      * | Model-specific
      * |--------------------------------------------------------------------------
      */
+
+    /**
+     * Find tenant role by tenant ID and name.
+     *
+     * Can be used with the SoftDeletes trait trashed filters.
+     *
+     * @param string $tenant_id
+     * @param string $name
+     * @return OrmResource
+     * @throws DoesNotExistException
+     * @throws UnexpectedException
+     */
+    public function findByName(string $tenant_id, string $name): OrmResource
+    {
+
+        $role_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
+            'tenant' => $tenant_id,
+            'name' => $name
+        ]);
+
+        if (!$role_id) {
+            throw new DoesNotExistException('Unable to find tenant role: Role does not exist');
+        }
+
+        return $this->find($role_id);
+
+    }
 
 }

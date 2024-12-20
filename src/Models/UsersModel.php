@@ -4,7 +4,6 @@ namespace Bayfront\BonesService\Rbac\Models;
 
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Application\Utilities\App;
-use Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidRequestException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
@@ -14,15 +13,10 @@ use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
-use Bayfront\StringHelpers\Str;
 use Bayfront\TimeHelpers\Time;
-use Bayfront\Validator\Rules\IsJson;
 use Exception;
 
-/**
- * Users model.
- */
-class Users extends RbacModel
+class UsersModel extends RbacModel
 {
 
     use Castable, SoftDeletes;
@@ -73,15 +67,26 @@ class Users extends RbacModel
     protected array $related_fields = [];
 
     /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'email',
+        'password'
+    ];
+
+    /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'email' => 'required|email|maxLength:255',
-        'password' => 'required|isString|maxLength:255',
+        'email' => 'email|maxLength:255',
+        'password' => 'isString|maxLength:255',
         'meta' => 'isArray',
         'admin' => 'isBoolean',
         'enabled' => 'isBoolean'
@@ -112,8 +117,7 @@ class Users extends RbacModel
         'enabled',
         'created_at',
         'updated_at',
-        'verified_at',
-        'deleted_at'
+        'verified_at'
     ];
 
     /**
@@ -185,6 +189,21 @@ class Users extends RbacModel
 
         $fields['password'] = App::createPasswordHash($this->ormService->filters->doFilter('rbac.user.password', Arr::get($fields, 'password', '')), $fields['salt']);
 
+        /** @noinspection DuplicatedCode */
+        if (isset($fields['meta']) && is_array($fields['meta'])) {
+
+            $meta = Arr::dot($fields['meta']);
+
+            foreach ($meta as $k => $v) {
+                if ($v === null) {
+                    unset($meta[$k]);
+                }
+            }
+
+            $fields['meta'] = Arr::undot($meta);
+
+        }
+
         return $fields;
     }
 
@@ -196,7 +215,7 @@ class Users extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.user.created', $resource);
     }
 
     /**
@@ -221,11 +240,19 @@ class Users extends RbacModel
      */
     protected function onRead(array $fields): array
     {
-        return $this->transform($fields, [
+        $fields = $this->transform($fields, [
             'meta' => [$this, 'jsonDecode'],
             'admin' => [$this, 'boolean'],
             'enabled' => [$this, 'boolean']
         ]);
+
+        if (isset($fields['meta'])) {
+            $meta = Arr::dot($fields['meta']);
+            ksort($meta);
+            $fields['meta'] = Arr::undot($meta);
+        }
+
+        return $fields;
     }
 
     /**
@@ -243,7 +270,7 @@ class Users extends RbacModel
 
         if (isset($fields['password'])) {
 
-            $salt = $this->rbacService->ormService->db->single("SELECT salt FROM $this->table_name WHERE $this->primary_key = :id", [
+            $salt = $this->ormService->db->single("SELECT salt FROM $this->table_name WHERE $this->primary_key = :id", [
                 'id' => $existing->getPrimaryKey()
             ]);
 
@@ -252,6 +279,25 @@ class Users extends RbacModel
             }
 
             $fields['password'] = App::createPasswordHash($this->ormService->filters->doFilter('rbac.user.password', $fields['password']), $salt);
+
+        }
+
+        /** @noinspection DuplicatedCode */
+        if (isset($fields['meta']) && is_array($fields['meta'])) {
+
+            $meta = $this->ormService->db->single("SELECT meta FROM $this->table_name WHERE $this->primary_key = :id", [
+                'id' => $existing->getPrimaryKey()
+            ]);
+
+            $meta = array_merge(Arr::dot($this->jsonDecode($meta)), Arr::dot($fields['meta']));
+
+            foreach ($meta as $k => $v) {
+                if ($v === null) {
+                    unset($meta[$k]);
+                }
+            }
+
+            $fields['meta'] = Arr::undot($meta);
 
         }
 
@@ -269,8 +315,15 @@ class Users extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        if (in_array('password', $fields)) {
-            $this->rbacService->ormService->events->doEvent('rbac.user.password.updated', $resource);
+
+        $this->ormService->events->doEvent('rbac.user.updated', $resource, $previous, $fields);
+
+        if (isset($fields['email'])) {
+            $this->ormService->events->doEvent('rbac.user.email.updated', $resource);
+        }
+
+        if (isset($fields['password'])) {
+            $this->ormService->events->doEvent('rbac.user.password.updated', $resource);
         }
     }
 
@@ -317,12 +370,12 @@ class Users extends RbacModel
     {
 
         try {
-            $tenants = new Tenants($this->rbacService);
+            $tenantsModel = new TenantsModel($this->rbacService);
         } catch (Exception) {
             throw new UnexpectedException('Unable to delete user: Error validating tenants');
         }
 
-        $owned = $this->ormService->db->count($tenants->getTableName(), [
+        $owned = $this->ormService->db->count($tenantsModel->getTableName(), [
             'owner' => $resource->getPrimaryKey()
         ]);
 
@@ -340,7 +393,7 @@ class Users extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.user.deleted', $resource);
     }
 
     /**
@@ -404,7 +457,7 @@ class Users extends RbacModel
     public function findByEmail(string $email): OrmResource
     {
 
-        $user = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email", [
+        $user = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email", [
             'email' => $email
         ]);
 
@@ -417,6 +470,23 @@ class Users extends RbacModel
     }
 
     // ------------------------Verification -------------------------
+
+    /**
+     * Update verified_at field to null.
+     *
+     * @param string $email
+     * @return bool
+     */
+    public function unverify(string $email): bool
+    {
+
+        return $this->ormService->db->update($this->table_name, [
+            'verified_at' => null
+        ], [
+            'email' => $email
+        ]);
+
+    }
 
     /**
      * Update verified_at field to current datetime.
@@ -434,7 +504,7 @@ class Users extends RbacModel
         ]);
 
         if ($updated === true) {
-            $this->rbacService->ormService->events->doEvent('rbac.user.verified', $email);
+            $this->ormService->events->doEvent('rbac.user.verified', $email);
         }
 
         return $updated;
@@ -442,7 +512,8 @@ class Users extends RbacModel
     }
 
     /**
-     * Soft-delete all unverified users created before timestamp.
+     * Soft-delete all unverified users created and never updated,
+     * or last updated before timestamp.
      *
      * @param int $timestamp
      * @return void
@@ -458,215 +529,12 @@ class Users extends RbacModel
         $table = $this->getTableName();
         $datetime = date('Y-m-d H:i:s', $timestamp);
 
-        $unverified = $this->rbacService->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND verified_at IS NULL AND deleted_at IS NULL", [
+        $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND (updated_at IS NULL OR updated_at < :datetime) AND verified_at IS NULL AND deleted_at IS NULL", [
             'datetime' => $datetime
         ]);
 
         foreach ($unverified as $uv) {
             $this->delete($uv['id']);
-        }
-
-    }
-
-    // ------------------------- MFA -------------------------
-
-    // MFA types
-    public const MFA_TYPE_NONZERO = 'nonzero';
-    public const MFA_TYPE_ALPHA = 'alpha';
-    public const MFA_TYPE_NUMERIC = 'numeric';
-    public const MFA_TYPE_ALPHANUMERIC = 'alphanumeric';
-    public const MFA_TYPE_ALL = 'all';
-
-    /**
-     * Create MFA for non-deleted user, verifying MFA wait time has elapsed.
-     *
-     * @param string $email
-     * @param int $length
-     * @param string $type (Any MFA_TYPE_* constant)
-     * @return array (Keys: created_at, expires_at, value)
-     * @throws AlreadyExistsException
-     * @throws DoesNotExistException
-     */
-    public function createMfa(string $email, int $length = 6, string $type = self::MFA_TYPE_NUMERIC): array
-    {
-
-        try {
-            $mfa = $this->getMfa($email);
-        } catch (DoesNotExistException) {
-            // Do nothing
-        }
-
-        $now = time();
-
-        $mfa_wait = (int)$this->rbacService->getConfig('user.mfa.wait', 3);
-
-        if (isset($mfa['created_at']) && $mfa_wait > 0) {
-
-            if ((int)$mfa['created_at'] > $now - ($mfa_wait * 60)) {
-                throw new AlreadyExistsException('Unable to create user MFA: Wait time not yet elapsed');
-            }
-
-        }
-
-        if ($this->rbacService->getConfig('user.mfa.duration', 15) == 0) {
-            $expires_at = 0;
-        } else {
-            $expires_at = $now + ($this->rbacService->getConfig('user.mfa.duration', 15) * 60);
-        }
-
-        $mfa_raw = [
-            'created_at' => $now,
-            'expires_at' => $expires_at,
-            'value' => Str::random($length, $type)
-        ];
-
-        $mfa_save = $mfa_raw;
-        $mfa_save['value'] = App::createHash($mfa_raw['value'], App::getConfig('app.key', ''));
-
-        $updated = $this->ormService->db->update($this->table_name, [ // Ensure user is not deleted
-            'mfa' => json_encode($mfa_save)
-        ], [
-            'email' => $email,
-            'deleted_at' => null
-        ]);
-
-        if (!$updated) {
-            throw new DoesNotExistException('Unable to create user MFA: User does not exist');
-        }
-
-        $this->rbacService->ormService->events->doEvent('rbac.user.mfa.created', $mfa_raw);
-
-        return $mfa_raw;
-
-    }
-
-    /**
-     * Get non-deleted user MFA, or quietly delete if invalid.
-     *
-     * @param string $email
-     * @return array (Keys: created_at, expires_at, value)
-     * @throws DoesNotExistException
-     */
-    public function getMfa(string $email): array
-    {
-
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $mfa = $this->ormService->db->single("SELECT mfa FROM $this->table_name WHERE email = :email AND mfa IS NOT NULL AND $deleted_at_field IS NULL", [
-            'email' => $email
-        ]);
-
-        if (!$mfa) {
-            throw new DoesNotExistException('Unable to get user MFA: MFA does not exist');
-        }
-
-        $json = new IsJson($mfa);
-
-        if (!$json->isValid()) {
-            $this->deleteMfa($email);
-            throw new DoesNotExistException('Unable to get user MFA: MFA is invalid');
-        }
-
-        $mfa = json_decode($mfa, true);
-
-        if (!isset($mfa['created_at']) || !isset($mfa['expires_at']) || !isset($mfa['value'])) {
-            $this->deleteMfa($email);
-            throw new DoesNotExistException('Unable to get user MFA: MFA missing required keys');
-        }
-
-        return $mfa;
-
-    }
-
-    /**
-     * Is MFA valid?
-     * Quietly deletes MFA if expired.
-     *
-     * @param string $email
-     * @param string $value
-     * @return bool
-     */
-    public function mfaIsValid(string $email, string $value): bool
-    {
-
-        try {
-            $mfa = $this->getMfa($email);
-        } catch (DoesNotExistException) {
-            return false;
-        }
-
-        // MFA is not expired
-
-        if ((int)Arr::get($mfa, 'expires_at', 0) !== 0 && (int)Arr::get($mfa, 'expires_at', 0) < time()) {
-
-            $this->deleteMfa($email);
-            return false;
-
-        }
-
-        // MFA value matches
-
-        if (Arr::get($mfa, 'value') != App::createHash($value, App::getConfig('app.key', ''))) {
-            return false;
-        }
-
-        return true;
-
-    }
-
-    /**
-     * Quietly delete user MFA, if existing.
-     *
-     * @param string $email
-     * @return bool
-     */
-    public function deleteMfa(string $email): bool
-    {
-
-        return $this->ormService->db->update($this->table_name, [
-            'mfa' => null
-        ], [
-            'email' => $email
-        ]);
-
-    }
-
-    /**
-     * Quietly delete all expired MFA's.
-     *
-     * @return void
-     */
-    public function deleteExpiredMfas(): void
-    {
-
-        $now = time();
-
-        $table = $this->getTableName();
-
-        $mfas = $this->rbacService->ormService->db->select("SELECT id, mfa FROM $table WHERE mfa IS NOT NULL");
-
-        $delete_ids = [];
-
-        foreach ($mfas as $mfa) {
-
-            $validator = new IsJson($mfa['mfa']);
-
-            if (!$validator->isValid()) {
-
-                $delete_ids[] = $mfa['id'];
-                continue;
-            }
-
-            $mfa_value = json_decode($mfa['mfa'], true);
-
-            if (Arr::get($mfa_value, 'expires_at', 0) < $now) {
-                $delete_ids[] = "'" . $mfa['id'] . "'";
-            }
-
-        }
-
-        if (!empty($delete_ids)) {
-            $this->rbacService->ormService->db->query("UPDATE $table SET mfa = NULL WHERE id IN (" . implode(',', $delete_ids) . ")");
         }
 
     }

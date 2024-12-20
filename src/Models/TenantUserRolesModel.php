@@ -7,10 +7,7 @@ use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant user teams model.
- */
-class TenantUserTeams extends RbacModel
+class TenantUserRolesModel extends RbacModel
 {
 
     /**
@@ -22,7 +19,7 @@ class TenantUserTeams extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USER_TEAMS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USER_ROLES);
     }
 
     /**
@@ -57,20 +54,31 @@ class TenantUserTeams extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant_user' => TenantUsers::class,
-        'team' => TenantTeams::class
+        'tenant_user' => TenantUsersModel::class,
+        'role' => TenantRolesModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'tenant_user',
+        'role'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant_user' => 'required|isString|lengthEquals:36',
-        'team' => 'required|isString|lengthEquals:36'
+        'tenant_user' => 'isString|lengthEquals:36',
+        'role' => 'isString|lengthEquals:36'
     ];
 
     /**
@@ -84,7 +92,7 @@ class TenantUserTeams extends RbacModel
     protected array $unique_fields = [
         [
             'tenant_user',
-            'team'
+            'role'
         ]
     ];
 
@@ -96,7 +104,7 @@ class TenantUserTeams extends RbacModel
     protected array $allowed_fields_read = [
         'id',
         'tenant_user',
-        'team',
+        'role',
         'created_at',
         'updated_at'
     ];
@@ -112,7 +120,7 @@ class TenantUserTeams extends RbacModel
     protected array $search_fields = [
         'id',
         'tenant_user',
-        'team'
+        'role'
     ];
 
     /**

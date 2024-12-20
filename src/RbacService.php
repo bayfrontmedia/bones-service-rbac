@@ -4,6 +4,7 @@ namespace Bayfront\BonesService\Rbac;
 
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Abstracts\Service;
+use Bayfront\Bones\Application\Utilities\App;
 use Bayfront\Bones\Exceptions\ServiceException;
 use Bayfront\BonesService\Orm\OrmService;
 use Bayfront\BonesService\Rbac\Events\RbacServiceEvents;
@@ -89,5 +90,34 @@ class RbacService extends Service
     {
         return $this->getConfig('table_prefix', '') . $table;
     }
+
+    /**
+     * Create hash from raw value.
+     *
+     * @param string $raw_value
+     * @return string
+     */
+    public function createHash(string $raw_value): string
+    {
+        return App::createHash($raw_value, App::getConfig('app.key', ''));
+    }
+
+    /**
+     * Does hash match raw value?
+     *
+     * @param string $hash
+     * @param string $raw_value
+     * @return bool
+     */
+    public function hashMatches(string $hash, string $raw_value): bool
+    {
+        return $hash === App::createHash($raw_value, App::getConfig('app.key', ''));
+    }
+
+    // TOTP types
+    public const TOTP_TYPE_NONZERO = 'nonzero';
+    public const TOTP_TYPE_ALPHA = 'alpha';
+    public const TOTP_TYPE_NUMERIC = 'numeric';
+    public const TOTP_TYPE_ALPHANUMERIC = 'alphanumeric';
 
 }

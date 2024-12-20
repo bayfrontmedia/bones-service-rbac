@@ -2,21 +2,22 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
+use Bayfront\ArrayHelpers\Arr;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
+use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
+use Bayfront\BonesService\Orm\Traits\Castable;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
+use Exception;
 
-/**
- * Permissions model.
- */
-class Permissions extends RbacModel
+class TenantsModel extends RbacModel
 {
 
-    use SoftDeletes;
+    use Castable, SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -27,7 +28,7 @@ class Permissions extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_PERMISSIONS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANTS);
     }
 
     /**
@@ -61,18 +62,35 @@ class Permissions extends RbacModel
      *
      * @var array
      */
-    protected array $related_fields = [];
+    protected array $related_fields = [
+        'owner' => UsersModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'owner',
+        'domain',
+        'name'
+    ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'name' => 'required|isString|maxLength:255',
-        'description' => 'isString|maxLength:255'
+        'owner' => 'isString|lengthEquals:36',
+        'domain' => 'isString|maxLength:63',
+        'name' => 'isString|maxLength:255',
+        'meta' => 'isArray',
+        'enabled' => 'isBoolean'
     ];
 
     /**
@@ -84,7 +102,7 @@ class Permissions extends RbacModel
      * @var array
      */
     protected array $unique_fields = [
-        'name'
+        'domain'
     ];
 
     /**
@@ -94,11 +112,13 @@ class Permissions extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
+        'owner',
+        'domain',
         'name',
-        'description',
+        'meta',
+        'enabled',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -111,8 +131,10 @@ class Permissions extends RbacModel
      */
     protected array $search_fields = [
         'id',
+        'owner',
+        'domain',
         'name',
-        'description'
+        'meta'
     ];
 
     /**
@@ -148,23 +170,63 @@ class Permissions extends RbacModel
     /**
      * Filter fields before creating resource.
      *
+     * - Create UUID
+     *
      * @param array $fields
      * @return array
      */
     protected function onCreating(array $fields): array
     {
         $fields['id'] = $this->createUuid();
+
+        /** @noinspection DuplicatedCode */
+        if (isset($fields['meta']) && is_array($fields['meta'])) {
+
+            $meta = Arr::dot($fields['meta']);
+
+            foreach ($meta as $k => $v) {
+                if ($v === null) {
+                    unset($meta[$k]);
+                }
+            }
+
+            $fields['meta'] = Arr::undot($meta);
+
+        }
+
         return $fields;
     }
 
     /**
      * Actions to perform after a resource is created.
      *
+     * - Add owner to tenant users, or delete tenant on error
+     *
      * @param OrmResource $resource
      * @return void
+     * @throws UnexpectedException
      */
     protected function onCreated(OrmResource $resource): void
     {
+
+        try {
+
+            $tenantUsersModel = new TenantUsersModel($this->rbacService);
+
+            $tenantUsersModel->create([
+                'tenant' => $resource->getPrimaryKey(),
+                'user' => $resource->get('owner', '')
+            ]);
+
+        } catch (Exception) {
+
+            $this->delete($resource->getPrimaryKey());
+
+            throw new UnexpectedException('Unable to create tenant: Error adding owner to tenant users');
+
+        }
+
+        $this->ormService->events->doEvent('rbac.tenant.created', $resource);
 
     }
 
@@ -184,22 +246,75 @@ class Permissions extends RbacModel
      *
      * @param array $fields
      * @return array
+     * @throws UnexpectedException
      */
     protected function onRead(array $fields): array
     {
+        $fields = $this->transform($fields, [
+            'meta' => [$this, 'jsonDecode'],
+            'enabled' => [$this, 'boolean']
+        ]);
+
+        if (isset($fields['meta'])) {
+            $meta = Arr::dot($fields['meta']);
+            ksort($meta);
+            $fields['meta'] = Arr::undot($meta);
+        }
+
         return $fields;
     }
 
     /**
      * Filter fields before updating resource.
      *
+     * - If owner is updated, ensure exists as a tenant user.
+     *
      * @param OrmResource $existing
      * @param array $fields (Fields to update)
      * @return array
+     * @throws InvalidFieldException
+     * @throws UnexpectedException
      */
     protected function onUpdating(OrmResource $existing, array $fields): array
     {
+
+        if (isset($fields['owner']) && $fields['owner'] !== $existing->get('owner')) {
+
+            try {
+
+                $tenantUsersModel = new TenantUsersModel($this->rbacService);
+
+            } catch (Exception) {
+                throw new UnexpectedException('Unable to update tenant: Error validating tenant owner');
+            }
+
+            if (!$tenantUsersModel->userInTenant($existing->getPrimaryKey(), $fields['owner'])) {
+                throw new InvalidFieldException('Unable to update tenant: Owner must exist as a tenant user');
+            }
+
+        }
+
+        /** @noinspection DuplicatedCode */
+        if (isset($fields['meta']) && is_array($fields['meta'])) {
+
+            $meta = $this->ormService->db->single("SELECT meta FROM $this->table_name WHERE $this->primary_key = :id", [
+                'id' => $existing->getPrimaryKey()
+            ]);
+
+            $meta = array_merge(Arr::dot($this->jsonDecode($meta)), Arr::dot($fields['meta']));
+
+            foreach ($meta as $k => $v) {
+                if ($v === null) {
+                    unset($meta[$k]);
+                }
+            }
+
+            $fields['meta'] = Arr::undot($meta);
+
+        }
+
         return $fields;
+
     }
 
     /**
@@ -212,18 +327,25 @@ class Permissions extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.updated', $resource, $previous, $fields);
     }
 
     /**
      * Filter fields before writing to resource (creating and updating).
      *
+     * - Transform fields
+     *
      * @param array $fields
      * @return array
+     * @throws UnexpectedException
      */
     protected function onWriting(array $fields): array
     {
-        return $fields;
+        return $this->transform($fields, [
+            'domain' => [$this, 'slug'],
+            'meta' => [$this, 'jsonEncode'],
+            'enabled' => [$this, 'integer']
+        ]);
     }
 
     /**
@@ -256,7 +378,7 @@ class Permissions extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.deleted', $resource);
     }
 
     /**
@@ -308,27 +430,49 @@ class Permissions extends RbacModel
      */
 
     /**
-     * Find permission by name.
+     * Find tenant by domain.
      *
      * Can be used with the SoftDeletes trait trashed filters.
      *
-     * @param string $name
+     * @param string $domain
      * @return OrmResource
      * @throws DoesNotExistException
      * @throws UnexpectedException
      */
-    public function findByName(string $name): OrmResource
+    public function findByDomain(string $domain): OrmResource
     {
 
-        $permission_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE name = :name", [
-            'name' => $name
+        $tenant_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE domain = :domain", [
+            'domain' => $domain
         ]);
 
-        if (!$permission_id) {
-            throw new DoesNotExistException('Unable to find permission: Permission does not exist');
+        if (!$tenant_id) {
+            throw new DoesNotExistException('Unable to find tenant: Tenant does not exist');
         }
 
-        return $this->find($permission_id);
+        return $this->find($tenant_id);
+
+    }
+
+    /**
+     * Get tenant owner user ID.
+     *
+     * @param string $tenant_id
+     * @return string
+     * @throws DoesNotExistException
+     */
+    public function getOwnerId(string $tenant_id): string
+    {
+
+        $owner = $this->ormService->db->single("SELECT owner FROM $this->table_name WHERE $this->primary_key = :id", [
+            'id' => $tenant_id
+        ]);
+
+        if (!$owner) {
+            throw new DoesNotExistException('Unable to get tenant owner: Tenant owner does not exist');
+        }
+
+        return $owner;
 
     }
 

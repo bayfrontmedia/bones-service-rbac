@@ -2,16 +2,18 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
+use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
+use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
+use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant role permissions model.
- */
-class TenantRolePermissions extends RbacModel
+class TenantTeamsModel extends RbacModel
 {
+
+    use SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -22,7 +24,7 @@ class TenantRolePermissions extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_ROLE_PERMISSIONS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_TEAMS);
     }
 
     /**
@@ -57,20 +59,31 @@ class TenantRolePermissions extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'role' => TenantRoles::class,
-        'permission' => Permissions::class
+        'tenant' => TenantsModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'tenant',
+        'name'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'role' => 'required|isString|lengthEquals:36',
-        'permission' => 'required|isString|lengthEquals:36'
+        'tenant' => 'isString|lengthEquals:36',
+        'name' => 'isString|maxLength:255',
+        'description' => 'isString|maxLength:255'
     ];
 
     /**
@@ -83,8 +96,8 @@ class TenantRolePermissions extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'role',
-            'permission'
+            'tenant',
+            'name'
         ]
     ];
 
@@ -95,8 +108,9 @@ class TenantRolePermissions extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'role',
-        'permission',
+        'tenant',
+        'name',
+        'description',
         'created_at',
         'updated_at'
     ];
@@ -111,8 +125,9 @@ class TenantRolePermissions extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'role',
-        'permission'
+        'tenant',
+        'name',
+        'description'
     ];
 
     /**
@@ -289,8 +304,51 @@ class TenantRolePermissions extends RbacModel
 
     /*
      * |--------------------------------------------------------------------------
+     * | Traits
+     * |--------------------------------------------------------------------------
+     */
+
+    /**
+     * Trait: SoftDeletes
+     *
+     * @inheritDoc
+     */
+    protected function getDeletedAtField(): string
+    {
+        return 'deleted_at';
+    }
+
+    /*
+     * |--------------------------------------------------------------------------
      * | Model-specific
      * |--------------------------------------------------------------------------
      */
+
+    /**
+     * Find tenant team by tenant ID and name.
+     *
+     * Can be used with the SoftDeletes trait trashed filters.
+     *
+     * @param string $tenant_id
+     * @param string $name
+     * @return OrmResource
+     * @throws DoesNotExistException
+     * @throws UnexpectedException
+     */
+    public function findByName(string $tenant_id, string $name): OrmResource
+    {
+
+        $team_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
+            'tenant' => $tenant_id,
+            'name' => $name
+        ]);
+
+        if (!$team_id) {
+            throw new DoesNotExistException('Unable to find tenant team: Team does not exist');
+        }
+
+        return $this->find($team_id);
+
+    }
 
 }

@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantUsers
+# [RBAC service](../README.md) > [Models](README.md) > TenantUsersModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantUsers` model is used to manage tenant users.
+The `Bayfront\BonesService\Rbac\Models\TenantUsersModel` is used to manage tenant users.
 
 The `rbac.tenant.user.created`, `rbac.tenant.user.updated` and `rbac.tenant.user.deleted` [events](../events.md) are executed.
 
@@ -26,7 +26,8 @@ Allowed fields read:
 Model-specific methods include:
 
 - [findByUserId](#findbyuserid)
-- [inTenant](#intenant)
+- [userInTenant](#userintenant)
+- [tenantUserInTenant](#tenantuserintenant)
 
 ## findByUserId
 
@@ -50,7 +51,7 @@ Can be used with the `SoftDeletes` trait trashed filters.
 - `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
 - `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
 
-## inTenant
+## userInTenant
 
 **Description:**
 
@@ -60,6 +61,21 @@ Is user in tenant?
 
 - `$tenant_id` (string)
 - `$user_id` (string)
+
+**Returns:**
+
+- (bool)
+
+## tenantUserInTenant
+
+**Description:**
+
+Is tenant user in tenant?
+
+**Parameters:**
+
+- `$tenant_id` (string)
+- `$tenant_user_id` (string)
 
 **Returns:**
 

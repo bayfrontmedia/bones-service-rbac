@@ -12,9 +12,12 @@ Methods include:
 - [read](#read)
 - [get](#get)
 - [getId](#getid)
+- [getEmail](#getemail)
 - [getMeta](#getmeta)
 - [isAdmin](#isadmin)
 - [isEnabled](#isenabled)
+- [isVerified](#isverified)
+- [getTenantInvitations](#gettenantinvitations)
 - [getTenants](#gettenants)
 - [inTenant](#intenant)
 - [getOwnedTenants](#getownedtenants)
@@ -24,9 +27,11 @@ Methods include:
 - [getRoles](#getroles)
 - [hasAllRoles](#hasallroles)
 - [hasAnyRoles](#hasanyroles)
+- [hasRole](#hasrole)
 - [getTeams](#getteams)
 - [inAllTeams](#inallteams)
 - [inAnyTeams](#inanyteams)
+- [inTeam](#inteam)
 - [getPermissions](#getpermissions)
 - [hasAllPermissions](#hasallpermissions)
 - [hasAnyPermissions](#hasanypermissions)
@@ -158,6 +163,48 @@ Is user enabled?
 **Parameters:**
 
 - (none)
+
+**Returns:**
+
+- (bool)
+
+## isVerified
+
+**Description:**
+
+Is user verified?
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (bool)
+
+## getTenantInvitations
+
+**Description:**
+
+Get all user tenant invitations.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (array)
+
+## hasTenantInvitation
+
+**Description:**
+
+Does user have invitation ID?
+
+**Parameters:**
+
+- `$invitation_id` (string)
 
 **Returns:**
 
@@ -327,6 +374,25 @@ Does user have any roles for tenant?
 
 - `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
 
+## hasRole
+
+**Description:**
+
+Does user have role?
+
+**Parameters:**
+
+- `$tenant_id` (string)
+- `$role_id` (string)
+
+**Returns:**
+
+- (bool)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
 ## getTeams
 
 **Description:**
@@ -374,6 +440,25 @@ Is user in any teams for tenant?
 
 - `$tenant_id` (string)
 - `$team_ids` (array): Array of team ID's
+
+**Returns:**
+
+- (bool)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## inTeam
+
+**Description:**
+
+Is user in team?
+
+**Parameters:**
+
+- `$tenant_id` (string)
+- `$team_id` (string)
 
 **Returns:**
 

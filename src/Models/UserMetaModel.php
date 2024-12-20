@@ -2,6 +2,8 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
+use Bayfront\ArrayHelpers\Arr;
+use Bayfront\Bones\Application\Utilities\App;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
@@ -10,12 +12,12 @@ use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
+use Bayfront\JWT\Jwt;
+use Bayfront\JWT\TokenException;
 use Bayfront\SimplePdo\Query;
+use Bayfront\Validator\Rules\IsJson;
 
-/**
- * Tenant meta model.
- */
-class TenantMeta extends RbacModel
+class UserMetaModel extends RbacModel
 {
 
     use HasProtectedPrefix, SoftDeletes;
@@ -29,7 +31,11 @@ class TenantMeta extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_META);
+        parent::__construct($rbacService, $rbacService::TABLE_USER_META);
+
+        $this->totp_meta_key_password = $this->getProtectedPrefix() . 'password';
+        $this->totp_meta_key_tfa = $this->getProtectedPrefix() . 'tfa';
+        $this->totp_meta_key_verification = $this->getProtectedPrefix() . 'verification';
     }
 
     /**
@@ -64,20 +70,32 @@ class TenantMeta extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant' => Tenants::class
+        'user' => UsersModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'user',
+        'meta_key',
+        'meta_value'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant' => 'required|isString|lengthEquals:36',
-        'meta_key' => 'required|isString|maxLength:255',
-        'meta_value' => 'required|maxLength:4000000000'
+        'user' => 'isString|lengthEquals:36',
+        'meta_key' => 'isString|maxLength:255',
+        'meta_value' => 'maxLength:4000000000'
     ];
 
     /**
@@ -90,7 +108,7 @@ class TenantMeta extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'tenant',
+            'user',
             'meta_key'
         ]
     ];
@@ -102,12 +120,11 @@ class TenantMeta extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'tenant',
+        'user',
         'meta_key',
         'meta_value',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -120,7 +137,7 @@ class TenantMeta extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'tenant',
+        'user',
         'meta_key',
         'meta_value'
     ];
@@ -331,30 +348,258 @@ class TenantMeta extends RbacModel
      */
 
     /**
-     * Find tenant meta by tenant ID and meta key value.
+     * Find user meta by user ID and meta key value.
      *
      * Can be used with the SoftDeletes trait trashed filters.
      *
-     * @param string $tenant_id
+     * @param string $user_id
      * @param string $meta_key
      * @return OrmResource
      * @throws DoesNotExistException
      * @throws UnexpectedException
      */
-    public function findByKey(string $tenant_id, string $meta_key): OrmResource
+    public function findByKey(string $user_id, string $meta_key): OrmResource
     {
 
-        $meta_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenantId AND meta_key = :metaKey", [
-            'tenantId' => $tenant_id,
+        $meta_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey", [
+            'userId' => $user_id,
             'metaKey' => $meta_key
         ]);
 
         if (!$meta_id) {
-            throw new DoesNotExistException('Unable to find tenant meta: Meta does not exist');
+            throw new DoesNotExistException('Unable to find user meta: Meta does not exist');
         }
 
         return $this->find($meta_id);
 
     }
+
+    // ------------------------- Tokens -------------------------
+
+    public const TOKEN_TYPE_ACCESS = 'access';
+    public const TOKEN_TYPE_REFRESH = 'refresh';
+
+    /**
+     * Create JWT.
+     *
+     * @param string $user_id
+     * @param string $type
+     * @param int $now
+     * @param int $exp
+     * @param string $jti
+     * @return string
+     */
+    private function createJwt(string $user_id, string $type, int $now, int $exp, string $jti = ''): string
+    {
+
+        $jwt = new Jwt(App::getConfig('app.key'));
+
+        $payload = array_merge($this->ormService->filters->doFilter('rbac.token.payload', []), [
+            'type' => $type
+        ]);
+
+        if ($jti !== '') {
+            $jwt->jti($jti);
+        }
+
+        $jwt->sub($user_id)
+            ->iat($now)
+            ->nbf($now)
+            ->exp($exp);
+
+        return $jwt->encode($payload);
+
+    }
+
+    /**
+     * Create token for user.
+     *
+     * @param string $user_id
+     * @param string $type (TOKEN_TYPE_* constant)
+     * @return string
+     * @throws DoesNotExistException
+     * @throws UnexpectedException
+     */
+    public function createToken(string $user_id, string $type): string
+    {
+
+        $now = time();
+
+        if ($type == self::TOKEN_TYPE_ACCESS) {
+
+            $exp = $now + ($this->rbacService->getConfig('user.token.access_duration', 5) * 60);
+            $jti = '';
+
+            if ($this->rbacService->getConfig('user.token.revocable') === true) {
+
+                try {
+
+                    $meta = $this->withProtectedPrefix()->upsert([
+                        'user' => $user_id,
+                        'meta_key' => $this->getProtectedPrefix() . 'access_token',
+                        'meta_value' => json_encode([
+                            'exp' => $exp
+                        ])
+                    ]);
+
+                } catch (InvalidFieldException) {
+                    throw new UnexpectedException('Unable to create access token: Error saving token');
+                }
+
+                $jti = $meta->getPrimaryKey();
+
+            }
+
+            return $this->createJwt($user_id, self::TOKEN_TYPE_ACCESS, $now, $exp, $jti);
+
+        } else if ($type == self::TOKEN_TYPE_REFRESH) {
+
+            $exp = $now + ($this->rbacService->getConfig('user.token.refresh_duration', 10080) * 60);
+
+            try {
+
+                $meta = $this->withProtectedPrefix()->upsert([
+                    'user' => $user_id,
+                    'meta_key' => $this->getProtectedPrefix() . 'refresh_token',
+                    'meta_value' => json_encode([
+                        'exp' => $exp
+                    ])
+                ]);
+
+            } catch (InvalidFieldException) {
+                throw new UnexpectedException('Unable to create refresh token: Error saving token');
+            }
+
+            return $this->createJwt($user_id, self::TOKEN_TYPE_REFRESH, $now, $exp, $meta->getPrimaryKey());
+
+        } else {
+            throw new UnexpectedException('Unable to create token: Invalid type');
+        }
+
+    }
+
+    /**
+     * Read token payload.
+     *
+     * NOTE: This does not perform any validation.
+     *
+     * @param string $token
+     * @return array
+     * @throws UnexpectedException
+     */
+    public function readToken(string $token): array
+    {
+        $jwt = new Jwt(App::getConfig('app.key'));
+
+        try {
+            $arr = $jwt->decode($token, false);
+        } catch (TokenException) {
+            throw new UnexpectedException('Unable to read token payload: Unexpected error');
+        }
+
+        return Arr::get($arr, 'payload', []);
+    }
+
+    /**
+     * Quietly hard-delete token for user.
+     *
+     * @param string $user_id
+     * @param string $type (TOKEN_TYPE_* constant)
+     * @return bool
+     */
+    public function deleteToken(string $user_id, string $type): bool
+    {
+
+        $table = $this->getTableName();
+
+        if ($type == self::TOKEN_TYPE_ACCESS) {
+
+            return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND meta_key = :accessToken", [
+                'user' => $user_id,
+                'accessToken' => $this->getProtectedPrefix() . 'access_token'
+            ]);
+
+        } else if ($type == self::TOKEN_TYPE_REFRESH) {
+
+            return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND meta_key = :refreshToken", [
+                'user' => $user_id,
+                'refreshToken' => $this->getProtectedPrefix() . 'refresh_token'
+            ]);
+
+        }
+
+        return false;
+
+    }
+
+    /**
+     * Quietly hard-delete access and refresh tokens for user.
+     *
+     * @param string $user_id
+     * @return bool
+     */
+    public function deleteAllTokens(string $user_id): bool
+    {
+
+        $table = $this->getTableName();
+
+        return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND (meta_key = :accessToken OR meta_key = :refreshToken)", [
+            'user' => $user_id,
+            'accessToken' => $this->getProtectedPrefix() . 'access_token',
+            'refreshToken' => $this->getProtectedPrefix() . 'refresh_token'
+        ]);
+
+    }
+
+    /**
+     * Quietly delete all expired access and refresh tokens.
+     *
+     * @return void
+     */
+    public function deleteExpiredTokens(): void
+    {
+
+        $now = time();
+
+        $table = $this->getTableName();
+
+        $tokens = $this->ormService->db->select("SELECT id, meta_value FROM $table WHERE meta_key = :accessToken OR meta_key = :refreshToken", [
+            'accessToken' => $this->getProtectedPrefix() . 'access_token',
+            'refreshToken' => $this->getProtectedPrefix() . 'refresh_token'
+        ]);
+
+        $delete_ids = [];
+
+        foreach ($tokens as $token) {
+
+            $validator = new IsJson($token['meta_value']);
+
+            if (!$validator->isValid()) {
+
+                $delete_ids[] = $token['id'];
+                continue;
+
+            }
+
+            $meta_value = json_decode($token['meta_value'], true);
+
+            if (Arr::get($meta_value, 'exp', 0) < $now) {
+                $delete_ids[] = "'" . $token['id'] . "'";
+            }
+
+        }
+
+        if (!empty($delete_ids)) {
+            $this->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
+        }
+
+    }
+
+    /*
+     * TOTP meta key definitions
+     */
+    public string $totp_meta_key_password;
+    public string $totp_meta_key_tfa;
+    public string $totp_meta_key_verification;
 
 }

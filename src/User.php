@@ -9,13 +9,14 @@ use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Utilities\Parsers\QueryParser;
-use Bayfront\BonesService\Rbac\Models\Permissions;
-use Bayfront\BonesService\Rbac\Models\TenantRolePermissions;
-use Bayfront\BonesService\Rbac\Models\TenantUserMeta;
-use Bayfront\BonesService\Rbac\Models\TenantUserRoles;
-use Bayfront\BonesService\Rbac\Models\TenantUsers;
-use Bayfront\BonesService\Rbac\Models\TenantUserTeams;
-use Bayfront\BonesService\Rbac\Models\UserMeta;
+use Bayfront\BonesService\Rbac\Models\PermissionsModel;
+use Bayfront\BonesService\Rbac\Models\TenantInvitationsModel;
+use Bayfront\BonesService\Rbac\Models\TenantRolePermissionsModel;
+use Bayfront\BonesService\Rbac\Models\TenantUserMetaModel;
+use Bayfront\BonesService\Rbac\Models\TenantUserRolesModel;
+use Bayfront\BonesService\Rbac\Models\TenantUsersModel;
+use Bayfront\BonesService\Rbac\Models\TenantUserTeamsModel;
+use Bayfront\BonesService\Rbac\Models\UserMetaModel;
 
 /**
  * Read-only user.
@@ -29,7 +30,7 @@ class User
 
     /**
      * @param RbacService $rbacService
-     * @param OrmResource $ormResource (Users model resource)
+     * @param OrmResource $ormResource (UsersModel resource)
      */
     public function __construct(RbacService $rbacService, OrmResource $ormResource)
     {
@@ -138,6 +139,86 @@ class User
         return Arr::get($this->user, 'enabled', false);
     }
 
+    /***
+     * Is user verified?
+     *
+     * @return bool
+     */
+    public function isVerified(): bool
+    {
+        return Arr::get($this->user, 'verified_at') !== null;
+    }
+
+    /*
+     * |--------------------------------------------------------------------------
+     * | Tenant invitations
+     * |--------------------------------------------------------------------------
+     */
+
+    private ?array $invitations = null;
+
+    /**
+     * @return void
+     * @throws InvalidRequestException
+     * @throws UnexpectedException
+     */
+    private function defineInvitations(): void
+    {
+
+        if (is_array($this->invitations)) {
+            return;
+        }
+
+        $tenantInvitationsModel = new TenantInvitationsModel($this->rbacService);
+
+        $invitations = $tenantInvitationsModel->list(new QueryParser([
+            'fields' => [
+                '*.*'
+            ],
+            'filter' => [
+                [
+                    'email' => [
+                        'eq' => $this->getEmail()
+                    ]
+                ]
+            ]
+        ]), true);
+
+        $this->invitations = $invitations->list();
+
+    }
+
+    /**
+     * Get all user tenant invitations.
+     *
+     * @return array
+     * @throws UnexpectedException
+     */
+    public function getTenantInvitations(): array
+    {
+
+        try {
+            $this->defineInvitations();
+        } catch (OrmServiceException) {
+            throw new UnexpectedException('Unable to retrieve user tenant invitations');
+        }
+
+        return $this->invitations;
+
+    }
+
+    /**
+     * Does user have invitation ID?
+     *
+     * @param string $invitation_id
+     * @return bool
+     * @throws UnexpectedException
+     */
+    public function hasTenantInvitation(string $invitation_id): bool
+    {
+        return in_array($invitation_id, Arr::pluck($this->getTenantInvitations(), 'id'));
+    }
+
     /*
      * |--------------------------------------------------------------------------
      * | Tenants
@@ -160,9 +241,9 @@ class User
             return;
         }
 
-        $tenantUsers = new TenantUsers($this->rbacService);
+        $tenantUsersModel = new TenantUsersModel($this->rbacService);
 
-        $tenants = $tenantUsers->list(new QueryParser([
+        $tenants = $tenantUsersModel->list(new QueryParser([
             'fields' => [
                 'id',
                 'tenant.*'
@@ -321,9 +402,9 @@ class User
             return;
         }
 
-        $tenantUserRoles = new TenantUserRoles($this->rbacService);
+        $tenantUserRolesModel = new TenantUserRolesModel($this->rbacService);
 
-        $roles = $tenantUserRoles->list(new QueryParser([
+        $roles = $tenantUserRolesModel->list(new QueryParser([
             'fields' => [
                 'role.*'
             ],
@@ -385,6 +466,19 @@ class User
         return Arr::hasAnyValues(Arr::pluck($this->getRoles($tenant_id), 'id'), $role_ids);
     }
 
+    /**
+     * Does user have role?
+     *
+     * @param string $tenant_id
+     * @param string $role_id
+     * @return bool
+     * @throws UnexpectedException
+     */
+    public function hasRole(string $tenant_id, string $role_id): bool
+    {
+        return in_array($role_id, Arr::pluck($this->getRoles($tenant_id), 'id'));
+    }
+
     /*
      * |--------------------------------------------------------------------------
      * | Tenant teams
@@ -413,9 +507,9 @@ class User
             return;
         }
 
-        $tenantUserTeams = new TenantUserTeams($this->rbacService);
+        $tenantUserTeamsModel = new TenantUserTeamsModel($this->rbacService);
 
-        $teams = $tenantUserTeams->list(new QueryParser([
+        $teams = $tenantUserTeamsModel->list(new QueryParser([
             'fields' => [
                 'team.*'
             ],
@@ -475,6 +569,19 @@ class User
     public function inAnyTeams(string $tenant_id, array $team_ids): bool
     {
         return Arr::hasAnyValues(Arr::pluck($this->getTeams($tenant_id), 'id'), $team_ids);
+    }
+
+    /**
+     * Is user in team?
+     *
+     * @param string $tenant_id
+     * @param string $team_id
+     * @return bool
+     * @throws UnexpectedException
+     */
+    public function inTeam(string $tenant_id, string $team_id): bool
+    {
+        return in_array($team_id, Arr::pluck($this->getTeams($tenant_id), 'id'));
     }
 
     /*
@@ -537,7 +644,7 @@ class User
 
         if ($this->ownsTenant($tenant_id)) {
 
-            $permissionsModel = new Permissions($this->rbacService);
+            $permissionsModel = new PermissionsModel($this->rbacService);
 
             $permissions = $permissionsModel->list(new QueryParser([
                 'fields' => [
@@ -549,9 +656,9 @@ class User
 
         } else {
 
-            $tenantRolePermissions = new TenantRolePermissions($this->rbacService);
+            $tenantRolePermissionsModel = new TenantRolePermissionsModel($this->rbacService);
 
-            $permissions = $tenantRolePermissions->list(new QueryParser([
+            $permissions = $tenantRolePermissionsModel->list(new QueryParser([
                 'fields' => [
                     'permission.*'
                 ],
@@ -664,10 +771,10 @@ class User
             return;
         }
 
-        $metaModel = new UserMeta($this->rbacService);
+        $userMetaModel = new UserMetaModel($this->rbacService);
 
         try {
-            $meta = $metaModel->findByKey($this->getId(), $meta_key);
+            $meta = $userMetaModel->findByKey($this->getId(), $meta_key);
             $this->user_meta[$meta_key] = $meta->get('meta_value');
         } catch (DoesNotExistException) {
             $this->user_meta[$meta_key] = null;
@@ -723,7 +830,7 @@ class User
             return;
         }
 
-        $tenantUserMetaModel = new TenantUserMeta($this->rbacService);
+        $tenantUserMetaModel = new TenantUserMetaModel($this->rbacService);
 
         try {
             $meta = $tenantUserMetaModel->findByKey($tenant_user_id, $meta_key);

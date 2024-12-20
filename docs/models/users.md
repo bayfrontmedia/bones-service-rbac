@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > Users
+# [RBAC service](../README.md) > [Models](README.md) > UsersModel
 
-The `Bayfront\BonesService\Rbac\Models\Users` model is used to manage users.
+The `Bayfront\BonesService\Rbac\Models\UsersModel` is used to manage users.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 
@@ -9,6 +9,9 @@ The password can be filtered (for example, to enforce password requirements) usi
 If the password is updated, the `rbac.user.password.updated` [event](../events.md) is executed.
 Extreme care should be taken to ensure the password is never leaked or stored.
 If the user exists as a [tenant owner](tenants.md), they cannot be deleted.
+
+When updating the `meta` field, new keys will be merged with existing keys.
+Setting a value to `null` will remove the key.
 
 This service only checks if the user is enabled and verified for [authentication](../authentication/README.md).
 Any other use-cases should be handled at the app-level
@@ -35,18 +38,13 @@ Allowed fields read:
 - `created_at`
 - `updated_at`
 - `verified_at`
-- `deleted_at`
 
 Model-specific methods include:
 
 - [findByEmail](#findbyemail)
 - [verify](#verify)
+- [unverify](#unverify)
 - [deleteUnverified](#deleteunverified)
-- [createMfa](#createmfa)
-- [getMfa](#getmfa)
-- [mfaIsValid](#mfaisvalid)
-- [deleteMfa](#deletemfa)
-- [deleteExpiredMfas](#deleteexpiredmfas)
 
 ## findByEmail
 
@@ -85,11 +83,26 @@ The `rbac.user.verified` [event](../events.md) is executed.
 
 - (bool)
 
+## unverify
+
+**Description:**
+
+Update `verified_at` field to `null.
+
+**Parameters:**
+
+- `$email` (string)
+
+**Returns:**
+
+- (bool)
+
 ## deleteUnverified
 
 **Description:**
 
-Soft-delete all unverified users created before timestamp.
+Soft-delete all unverified users created and never updated,
+or last updated before timestamp.
 
 **Parameters:**
 
@@ -102,92 +115,3 @@ Soft-delete all unverified users created before timestamp.
 **Throws:**
 
 - `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
-
-## createMfa
-
-**Description:**
-
-Create MFA for non-deleted user, verifying MFA wait time has elapsed.
-
-This method utilizes the `user.mfa.wait` and `user.mfa.duration` [config values](../setup.md#configuration).
-The MFA value is returned once when the resource is created. If the value is misplaced, a new MFA must be created.
-
-The `rbac.user.mfa.created` [event](../events.md) is executed on successful creation.
-Extreme care should be taken to ensure the MFA value is never leaked or stored.
-
-**Parameters:**
-
-- `$email` (string)
-- `$length = 6` (int)
-- `$type = self::MFA_TYPE_NUMERIC`: Any `MFA_TYPE_*` constant
-
-**Returns:**
-
-- (array): Keys: `created_at`, `expires_at`, `value`
-
-**Throws:**
-
-- `Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException`
-- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
-
-## getMfa
-
-**Description:**
-
-Get non-deleted user MFA, or quietly delete if invalid.
-
-**Parameters:**
-
-- `$email` (string)
-
-**Returns:**
-
-- (array): Keys: `created_at`, `expires_at`, `value`
-
-**Throws:**
-
-- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
-
-## mfaIsValid
-
-**Description:**
-
-Is MFA valid?
-Quietly deletes MFA if expired.
-
-**Parameters:**
-
-- `$email` (string)
-- `$value` (string)
-
-**Returns:**
-
-- (bool)
-
-## deleteMfa
-
-**Description:**
-
-Quietly delete user MFA, if existing.
-
-**Parameters:**
-
-- `$email` (string)
-
-**Returns:**
-
-- (bool)
-
-## deleteExpiredMfas
-
-**Description:**
-
-Quietly delete all expired MFA's.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- (void)

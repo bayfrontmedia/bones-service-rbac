@@ -4,17 +4,17 @@ namespace Bayfront\BonesService\Rbac\Commands;
 
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Exceptions\ServiceException;
-use Bayfront\BonesService\Rbac\Models\Permissions;
-use Bayfront\BonesService\Rbac\Models\TenantRolePermissions;
-use Bayfront\BonesService\Rbac\Models\TenantRoles;
-use Bayfront\BonesService\Rbac\Models\Tenants;
-use Bayfront\BonesService\Rbac\Models\TenantTeams;
-use Bayfront\BonesService\Rbac\Models\TenantUserMeta;
-use Bayfront\BonesService\Rbac\Models\TenantUserRoles;
-use Bayfront\BonesService\Rbac\Models\TenantUsers;
-use Bayfront\BonesService\Rbac\Models\TenantUserTeams;
-use Bayfront\BonesService\Rbac\Models\UserKeys;
-use Bayfront\BonesService\Rbac\Models\Users;
+use Bayfront\BonesService\Rbac\Models\PermissionsModel;
+use Bayfront\BonesService\Rbac\Models\TenantRolePermissionsModel;
+use Bayfront\BonesService\Rbac\Models\TenantRolesModel;
+use Bayfront\BonesService\Rbac\Models\TenantsModel;
+use Bayfront\BonesService\Rbac\Models\TenantTeamsModel;
+use Bayfront\BonesService\Rbac\Models\TenantUserMetaModel;
+use Bayfront\BonesService\Rbac\Models\TenantUserRolesModel;
+use Bayfront\BonesService\Rbac\Models\TenantUsersModel;
+use Bayfront\BonesService\Rbac\Models\TenantUserTeamsModel;
+use Bayfront\BonesService\Rbac\Models\UserKeysModel;
+use Bayfront\BonesService\Rbac\Models\UsersModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -76,17 +76,17 @@ class RbacSeed extends Command
 
         try {
 
-            $permissions = new Permissions($this->rbacService);
-            $tenantRolePermissions = new TenantRolePermissions($this->rbacService);
-            $tenantRoles = new TenantRoles($this->rbacService);
-            $tenants = new Tenants($this->rbacService);
-            $tenantTeams = new TenantTeams($this->rbacService);
-            $tenantUserMeta = new TenantUserMeta($this->rbacService);
-            $tenantUserRoles = new TenantUserRoles($this->rbacService);
-            $tenantUsers = new TenantUsers($this->rbacService);
-            $tenantUserTeams = new TenantUserTeams($this->rbacService);
-            $userKeys = new UserKeys($this->rbacService);
-            $users = new Users($this->rbacService);
+            $permissions = new PermissionsModel($this->rbacService);
+            $tenantRolePermissions = new TenantRolePermissionsModel($this->rbacService);
+            $tenantRoles = new TenantRolesModel($this->rbacService);
+            $tenants = new TenantsModel($this->rbacService);
+            $tenantTeams = new TenantTeamsModel($this->rbacService);
+            $tenantUserMeta = new TenantUserMetaModel($this->rbacService);
+            $tenantUserRoles = new TenantUserRolesModel($this->rbacService);
+            $tenantUsers = new TenantUsersModel($this->rbacService);
+            $tenantUserTeams = new TenantUserTeamsModel($this->rbacService);
+            $userKeys = new UserKeysModel($this->rbacService);
+            $users = new UsersModel($this->rbacService);
 
             if ($users->getCount() > 0) {
 

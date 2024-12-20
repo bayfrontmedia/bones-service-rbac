@@ -4,16 +4,17 @@ namespace Bayfront\BonesService\Rbac\Authenticators;
 
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
-use Bayfront\BonesService\Rbac\Exceptions\Authentication\MfaDoesNotExistException;
+use Bayfront\BonesService\Rbac\Exceptions\Authentication\TotpDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UnexpectedAuthenticationException;
-use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDisabledException;
+use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserNotVerifiedException;
-use Bayfront\BonesService\Rbac\Models\Users;
+use Bayfront\BonesService\Rbac\Models\UserMetaModel;
+use Bayfront\BonesService\Rbac\Models\UsersModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\User;
 
-class MfaAuthenticator
+class TotpAuthenticator
 {
 
     public RbacService $rbacService;
@@ -24,38 +25,29 @@ class MfaAuthenticator
     }
 
     /**
-     * Authenticate with MFA, quietly deleting if expired or when authenticated.
+     * Authenticate with user TOTP, quietly deleting if expired or when authenticated.
      *
      * @param string $email
-     * @param string $mfa_value
+     * @param string $value
      * @return User
-     * @throws MfaDoesNotExistException
+     * @throws TotpDoesNotExistException
      * @throws UnexpectedAuthenticationException
      * @throws UserDisabledException
      * @throws UserDoesNotExistException
      * @throws UserNotVerifiedException
      */
-    public function authenticate(string $email, string $mfa_value): User
+    public function authenticate(string $email, string $value): User
     {
 
-        // ------------------------- MFA -------------------------
-
-        $usersModel = new Users($this->rbacService);
-
-        if (!$usersModel->mfaIsValid($email, $mfa_value)) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.mfa', $email);
-            throw new MfaDoesNotExistException('Unable to authenticate user: MFA does not exist');
-        }
-
         // ------------------------- User -------------------------
+
+        $usersModel = new UsersModel($this->rbacService);
 
         try {
             $user_resource = $usersModel->findByEmail($email);
         } catch (DoesNotExistException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.mfa', $email);
             throw new UserDoesNotExistException('Unable to authenticate user: User does not exist');
         } catch (UnexpectedException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.mfa', $email);
             throw new UnexpectedAuthenticationException('Unable to authenticate user: Unable to find user');
         }
 
@@ -64,7 +56,6 @@ class MfaAuthenticator
         // User is enabled
 
         if (!$user->isEnabled()) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.mfa', $email);
             throw new UserDisabledException('Unable to authenticate user: User is disabled');
         }
 
@@ -72,15 +63,26 @@ class MfaAuthenticator
 
         if ($this->rbacService->getConfig('user.require_verification', true) === true
             && $user->get('verified_at') === null) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.mfa', $email);
             throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');
         }
 
-        // Delete mfa
+        // ------------------------- TOTP -------------------------
 
-        $usersModel->deleteMfa($email);
+        $userMetaModel = new UserMetaModel($this->rbacService);
 
-        $this->rbacService->ormService->events->doEvent('rbac.auth.success', $user);
+        try {
+            $totp = $userMetaModel->getTotp($user->getId(), $userMetaModel->totp_meta_key_tfa);
+        } catch (DoesNotExistException) {
+            throw new TotpDoesNotExistException('Unable to authenticate user: TOTP does not exist');
+        }
+
+        if (!$this->rbacService->hashMatches($totp->getValue(), $value)) {
+            throw new TotpDoesNotExistException('Unable to authenticate user: TOTP does not exist with value');
+        }
+
+        // Delete TOTP
+
+        $userMetaModel->deleteTotp($user->getId(), $userMetaModel->totp_meta_key_tfa);
 
         return $user;
 

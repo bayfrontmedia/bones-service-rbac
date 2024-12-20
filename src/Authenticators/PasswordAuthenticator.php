@@ -9,7 +9,7 @@ use Bayfront\BonesService\Rbac\Exceptions\Authentication\UnexpectedAuthenticatio
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDisabledException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserNotVerifiedException;
-use Bayfront\BonesService\Rbac\Models\Users;
+use Bayfront\BonesService\Rbac\Models\UsersModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\User;
 
@@ -38,7 +38,7 @@ class PasswordAuthenticator
     public function authenticate(string $email, string $password): User
     {
 
-        $usersModel = new Users($this->rbacService);
+        $usersModel = new UsersModel($this->rbacService);
 
         $users_table = $usersModel->getTableName();
 
@@ -49,21 +49,18 @@ class PasswordAuthenticator
         // User exists
 
         if (!$results) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.password', $email);
             throw new UserDoesNotExistException('Unable to authenticate user: User does not exist');
         }
 
         // Password is valid
 
         if (!App::isPasswordHashValid($password, $results['salt'], $results['password'])) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.password', $email);
             throw new InvalidPasswordException('Unable to authenticate user: Incorrect password');
         }
 
         try {
             $user_resource = $usersModel->find($results['id']);
         } catch (OrmServiceException) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.password', $email);
             throw new UnexpectedAuthenticationException('Unable to authenticate user: Unable to find user');
         }
 
@@ -72,7 +69,6 @@ class PasswordAuthenticator
         // User is enabled
 
         if (!$user->isEnabled()) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.password', $email);
             throw new UserDisabledException('Unable to authenticate user: User is disabled');
         }
 
@@ -80,11 +76,8 @@ class PasswordAuthenticator
 
         if ($this->rbacService->getConfig('user.require_verification', true) === true
             && $user->get('verified_at') === null) {
-            $this->rbacService->ormService->events->doEvent('rbac.auth.fail.password', $email);
             throw new UserNotVerifiedException('Unable to authenticate user: User is not verified');
         }
-
-        $this->rbacService->ormService->events->doEvent('rbac.auth.success', $user);
 
         return $user;
 

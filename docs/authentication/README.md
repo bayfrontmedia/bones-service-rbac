@@ -10,17 +10,18 @@ Users must be enabled in order to authenticate.
 If a user belongs to a disabled [tenant](../models/tenants.md), the user will still be able to authenticate, 
 but will simply inherit no permissions for that tenant.
 
-In addition, if new user verification is required via the `user.require_verification` [config value](../setup.md#configuration),
+In addition, if new user verification is required via the `user.verification.require` [config value](../setup.md#configuration),
 the `verified_at` field of the [users](../models/users.md#verify) table must be defined in order for the user to authenticate.
 Implementation of how a user is verified is handled at the app-level.
-Typically, a complex MFA can be created and emailed to the user. Once the MFA is confirmed, the user can then be verified
-and the MFA can be deleted.
+Typically, a complex TOTP can be created and emailed to the user. Once the TOTP is confirmed, the user can then be verified
+and the TOTP can be deleted.
 
 User permissions can be calculated using the [User](../user.md) class.
 
 ## Authentication methods
 
-- [MfaAuthenticator](mfaauthenticator.md)
+- [EmailAuthenticator](emailauthenticator.md)
 - [PasswordAuthenticator](passwordauthenticator.md)
 - [TokenAuthenticator](tokenauthenticator.md)
+- [TotpAuthenticator](totpauthenticator.md)
 - [UserKeyAuthenticator](userkeyauthenticator.md)

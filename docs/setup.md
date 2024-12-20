@@ -14,18 +14,16 @@ Typically, this would be placed at `config/rbac.php`.
 **Example:**
 
 ```php
+use Bayfront\Bones\Application\Utilities\App;
+
 return [
-    'table_prefix' => 'rbac_',
-    'invitation_duration' => 10080, // Max tenant invitation duration (in minutes), 0 for unlimited: 10080 = 7 days
+    'table_prefix' => 'rbac_', // RBAC database table prefix
     'protected_prefix' => '_app-', // Protected column prefix
+    'invitation_duration' => 10080, // Max tenant invitation duration (in minutes), 0 for unlimited: 10080 = 7 days
     'user' => [
-        'require_verification' => true, // Require user account verification
+        'require_verification' => true, // Require users to be verified to authenticate
         'key' => [
             'max_mins' => 525600, // Max user key duration (in minutes), 0 for unlimited: 525600 = 365 days
-        ],
-        'mfa' => [
-            'duration' => 15, // MFA validity duration (in minutes), 0 for unlimited
-            'wait' => 3, // Wait time (in minutes) to wait before creating a new MFA, or 0 to disable
         ],
         'token' => [
             'revocable' => true, // Allow access tokens to be revocable? This requires a database query to validate each request
@@ -151,15 +149,15 @@ php bones rbac:seed --force
 
 ## Table diagram
 
-![](diagram.png)
+![](diagram/bones-service-rbac%20v1.png)
 
 ## Scheduled jobs
 
 To keep the database optimized, the following scheduled jobs are recommended:
 
-- Delete expired user MFA's using [deleteExpiredMfas](models/users.md#deleteexpiredmfas).
 - If user verification is required, delete unverified users using [deleteUnverified](models/users.md#deleteunverified).
 - [Tenant invitations](models/tenantinvitations.md) and [user keys](models/userkeys.md) are both prunable by the `expires_at` field,
 and should be pruned regularly.
 - Delete any expired access and refresh tokens using [deleteExpiredTokens](models/usermeta.md#deleteexpiredtokens).
+- Delete any expired TOTP's using [deleteExpiredUserVerifications](models/usermeta.md#deleteexpireduserverifications), [deleteExpiredPasswordRequests](models/usermeta.md#deleteexpiredpasswordrequests) and [deleteExpiredUserTotps](models/usermeta.md#deleteexpiredusertotps).
 - Other soft-deleted resources may need to be permanently deleted using the [purgeTrashed](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md#purgetrashed) method as needed.

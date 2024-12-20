@@ -4,10 +4,19 @@ The `Bayfront\BonesService\Rbac\RbacService` class contains the following Bones 
 
 - [ORM service](https://github.com/bayfrontmedia/bones-service-orm)
 
+The following constants exist to define TOTP type when using the createTotp method:
+
+- `TOTP_TYPE_NONZERO`
+- `TOTP_TYPE_ALPHA`
+- `TOTP_TYPE_NUMERIC`
+- `TOTP_TYPE_ALPHANUMERIC`
+
 Methods include:
 
 - [getConfig](#getconfig)
 - [getTableName](#gettablename)
+- [createHash](#createhash)
+- [hashMatches](#hashmatches)
 
 ## getConfig
 
@@ -38,5 +47,31 @@ Get prefixed table name.
 
 - (string)
 
+## createHash
 
+**Description:**
 
+Create hash from raw value.
+
+**Parameters:**
+
+- `$raw_value` (string)
+
+**Returns:**
+
+- (string)
+
+## hashMatches
+
+**Description:**
+
+Does hash match raw value?
+
+**Parameters:**
+
+- `$hash` (string)
+- `$raw_value` (string)
+
+**Returns:**
+
+- (bool)

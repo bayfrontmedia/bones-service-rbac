@@ -2,24 +2,13 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
-use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
-use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
-use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
-use Bayfront\BonesService\Orm\Traits\Castable;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
-use Exception;
 
-/**
- * Tenants model.
- */
-class Tenants extends RbacModel
+class TenantUserTeamsModel extends RbacModel
 {
-
-    use Castable, SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -30,7 +19,7 @@ class Tenants extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANTS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USER_TEAMS);
     }
 
     /**
@@ -65,22 +54,31 @@ class Tenants extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'owner' => Users::class
+        'tenant_user' => TenantUsersModel::class,
+        'team' => TenantTeamsModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'tenant_user',
+        'team'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'owner' => 'required|isString|lengthEquals:36',
-        'domain' => 'required|isString|maxLength:63',
-        'name' => 'required|isString|maxLength:255',
-        'meta' => 'isArray',
-        'enabled' => 'isBoolean'
+        'tenant_user' => 'isString|lengthEquals:36',
+        'team' => 'isString|lengthEquals:36'
     ];
 
     /**
@@ -92,7 +90,10 @@ class Tenants extends RbacModel
      * @var array
      */
     protected array $unique_fields = [
-        'domain'
+        [
+            'tenant_user',
+            'team'
+        ]
     ];
 
     /**
@@ -102,14 +103,10 @@ class Tenants extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'owner',
-        'domain',
-        'name',
-        'meta',
-        'enabled',
+        'tenant_user',
+        'team',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -122,10 +119,8 @@ class Tenants extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'owner',
-        'domain',
-        'name',
-        'meta'
+        'tenant_user',
+        'team'
     ];
 
     /**
@@ -175,31 +170,11 @@ class Tenants extends RbacModel
     /**
      * Actions to perform after a resource is created.
      *
-     * - Add owner to tenant users, or delete tenant on error
-     *
      * @param OrmResource $resource
      * @return void
-     * @throws UnexpectedException
      */
     protected function onCreated(OrmResource $resource): void
     {
-
-        try {
-
-            $tenantUsers = new TenantUsers($this->rbacService);
-
-            $tenantUsers->create([
-                'tenant' => $resource->getPrimaryKey(),
-                'user' => $resource->get('owner', '')
-            ]);
-
-        } catch (Exception) {
-
-            $this->delete($resource->getPrimaryKey());
-
-            throw new UnexpectedException('Unable to create tenant: Error adding owner to tenant users');
-
-        }
 
     }
 
@@ -219,48 +194,22 @@ class Tenants extends RbacModel
      *
      * @param array $fields
      * @return array
-     * @throws UnexpectedException
      */
     protected function onRead(array $fields): array
     {
-        return $this->transform($fields, [
-            'meta' => [$this, 'jsonDecode'],
-            'enabled' => [$this, 'boolean']
-        ]);
+        return $fields;
     }
 
     /**
      * Filter fields before updating resource.
      *
-     * - If owner is updated, ensure exists as a tenant user.
-     *
      * @param OrmResource $existing
      * @param array $fields (Fields to update)
      * @return array
-     * @throws InvalidFieldException
-     * @throws UnexpectedException
      */
     protected function onUpdating(OrmResource $existing, array $fields): array
     {
-
-        if (isset($fields['owner']) && $fields['owner'] !== $existing->get('owner')) {
-
-            try {
-
-                $tenantUsers = new TenantUsers($this->rbacService);
-
-            } catch (Exception) {
-                throw new UnexpectedException('Unable to update tenant: Error validating tenant owner');
-            }
-
-            if (!$tenantUsers->inTenant($existing->getPrimaryKey(), $fields['owner'])) {
-                throw new InvalidFieldException('Unable to update tenant: Owner must exist as a tenant user');
-            }
-
-        }
-
         return $fields;
-
     }
 
     /**
@@ -273,27 +222,18 @@ class Tenants extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        if (in_array('owner', $fields)) {
-            $this->rbacService->ormService->events->doEvent('rbac.tenant.owner.updated', $resource, $previous, $fields);
-        }
+
     }
 
     /**
      * Filter fields before writing to resource (creating and updating).
      *
-     * - Transform fields
-     *
      * @param array $fields
      * @return array
-     * @throws UnexpectedException
      */
     protected function onWriting(array $fields): array
     {
-        return $this->transform($fields, [
-            'domain' => [$this, 'slug'],
-            'meta' => [$this, 'jsonEncode'],
-            'enabled' => [$this, 'integer']
-        ]);
+        return $fields;
     }
 
     /**
@@ -357,71 +297,8 @@ class Tenants extends RbacModel
 
     /*
      * |--------------------------------------------------------------------------
-     * | Traits
-     * |--------------------------------------------------------------------------
-     */
-
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
-    /*
-     * |--------------------------------------------------------------------------
      * | Model-specific
      * |--------------------------------------------------------------------------
      */
-
-    /**
-     * Find tenant by domain.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
-     *
-     * @param string $domain
-     * @return OrmResource
-     * @throws DoesNotExistException
-     * @throws UnexpectedException
-     */
-    public function findByDomain(string $domain): OrmResource
-    {
-
-        $tenant_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE domain = :domain", [
-            'domain' => $domain
-        ]);
-
-        if (!$tenant_id) {
-            throw new DoesNotExistException('Unable to find tenant: Tenant does not exist');
-        }
-
-        return $this->find($tenant_id);
-
-    }
-
-    /**
-     * Get tenant owner user ID.
-     *
-     * @param string $tenant_id
-     * @return string
-     * @throws DoesNotExistException
-     */
-    public function getOwnerId(string $tenant_id): string
-    {
-
-        $owner = $this->ormService->db->single("SELECT owner FROM $this->table_name WHERE $this->primary_key = :id", [
-            'id' => $tenant_id
-        ]);
-
-        if (!$owner) {
-            throw new DoesNotExistException('Unable to get tenant owner: Tenant owner does not exist');
-        }
-
-        return $owner;
-
-    }
 
 }

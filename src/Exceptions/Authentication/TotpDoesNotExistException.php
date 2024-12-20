@@ -2,7 +2,7 @@
 
 namespace Bayfront\BonesService\Rbac\Exceptions\Authentication;
 
-class MfaDoesNotExistException extends UserAuthenticationException
+class TotpDoesNotExistException extends UserAuthenticationException
 {
 
 }

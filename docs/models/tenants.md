@@ -1,12 +1,15 @@
-# [RBAC service](../README.md) > [Models](README.md) > Tenants
+# [RBAC service](../README.md) > [Models](README.md) > TenantsModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantRoles` model is used to manage tenants.
+The `Bayfront\BonesService\Rbac\Models\TenantsModel` is used to manage tenants.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 
 Upon successful creation, the owner will be added to the tenant as a tenant user.
 If updating the tenant owner, the user must exist as a tenant user.
 If the tenant owner is updated, the `rbac.tenant.owner.updated` [event](../events.md) will be executed.
+
+When updating the `meta` field, new keys will be merged with existing keys.
+Setting a value to `null` will remove the key. 
 
 This service only checks if the tenant is enabled when calculating [user permissions](../user.md#getpermissions).
 Any other use-cases should be handled at the app-level
@@ -21,7 +24,7 @@ Allowed fields write:
 
 Unique fields:
 
-- `domain`
+- `domain` (Will be transformed to lowercase URL-friendly slug when created/updated)
 
 Allowed fields read:
 
@@ -33,7 +36,6 @@ Allowed fields read:
 - `enabled`
 - `created_at`
 - `updated_at`
-- `deleted_at`
 
 Model-specific methods include:
 

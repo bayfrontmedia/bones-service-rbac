@@ -13,10 +13,7 @@ use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 use Exception;
 
-/**
- * Tenant users model.
- */
-class TenantUsers extends RbacModel
+class TenantUsersModel extends RbacModel
 {
 
     /**
@@ -63,20 +60,31 @@ class TenantUsers extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant' => Tenants::class,
-        'user' => Users::class
+        'tenant' => TenantsModel::class,
+        'user' => UsersModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'tenant',
+        'user'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant' => 'required|isString|lengthEquals:36',
-        'user' => 'required|isString|lengthEquals:36'
+        'tenant' => 'isString|lengthEquals:36',
+        'user' => 'isString|lengthEquals:36'
     ];
 
     /**
@@ -173,7 +181,7 @@ class TenantUsers extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.created', $resource);
+        $this->ormService->events->doEvent('rbac.tenant.user.created', $resource);
     }
 
     /**
@@ -214,8 +222,8 @@ class TenantUsers extends RbacModel
 
         try {
 
-            $tenants = new Tenants($this->rbacService);
-            $tenant_owner = $tenants->getOwnerId($existing->get('tenant', ''));
+            $tenantsModel = new TenantsModel($this->rbacService);
+            $tenant_owner = $tenantsModel->getOwnerId($existing->get('tenant', ''));
 
         } catch (Exception) {
             throw new UnexpectedException('Unable to update tenant user: Error validating tenant owner');
@@ -251,7 +259,7 @@ class TenantUsers extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.updated', $resource, $previous, $fields);
+        $this->ormService->events->doEvent('rbac.tenant.user.updated', $resource, $previous, $fields);
     }
 
     /**
@@ -291,8 +299,8 @@ class TenantUsers extends RbacModel
 
         try {
 
-            $tenants = new Tenants($this->rbacService);
-            $tenant_owner = $tenants->getOwnerId($resource->get('tenant', ''));
+            $tenantsModel = new TenantsModel($this->rbacService);
+            $tenant_owner = $tenantsModel->getOwnerId($resource->get('tenant', ''));
 
         } catch (OrmServiceException) {
             throw new UnexpectedException('Unable to delete tenant user: Error validating tenant owner');
@@ -312,7 +320,7 @@ class TenantUsers extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.tenant.user.deleted', $resource);
+        $this->ormService->events->doEvent('rbac.tenant.user.deleted', $resource);
     }
 
     /**
@@ -361,7 +369,7 @@ class TenantUsers extends RbacModel
     public function findByUserId(string $tenant_id, string $user_id): OrmResource
     {
 
-        $tenant_user_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenantId AND user = :userId", [
+        $tenant_user_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenantId AND user = :userId", [
             'tenantId' => $tenant_id,
             'userId' => $user_id
         ]);
@@ -381,12 +389,29 @@ class TenantUsers extends RbacModel
      * @param string $user_id
      * @return bool
      */
-    public function inTenant(string $tenant_id, string $user_id): bool
+    public function userInTenant(string $tenant_id, string $user_id): bool
     {
 
         return $this->ormService->db->exists($this->table_name, [
             'tenant' => $tenant_id,
             'user' => $user_id
+        ]);
+
+    }
+
+    /**
+     * Is tenant user in tenant?
+     *
+     * @param string $tenant_id
+     * @param string $tenant_user_id
+     * @return bool
+     */
+    public function tenantUserInTenant(string $tenant_id, string $tenant_user_id): bool
+    {
+
+        return $this->ormService->db->exists($this->table_name, [
+            'tenant' => $tenant_id,
+            'id' => $tenant_user_id
         ]);
 
     }

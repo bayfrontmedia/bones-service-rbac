@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > UserKeys
+# [RBAC service](../README.md) > [Models](README.md) > UserKeysModel
 
-The `Bayfront\BonesService\Rbac\Models\UserKeys` model is used to manage user API keys.
+The `Bayfront\BonesService\Rbac\Models\UserKeysModel` is used to manage user API keys.
 
 This model uses the [Prunable](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/prunable.md) and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
 
@@ -36,7 +36,6 @@ Allowed fields read:
 - `last_used`
 - `created_at`
 - `updated_at`
-- `deleted_at`
 
 Model-specific methods include:
 

@@ -1,16 +1,11 @@
-# [RBAC service](../README.md) > [Models](README.md) > UserMeta
+# [RBAC service](../README.md) > [Models](README.md) > UserMetaModel
 
-The `Bayfront\BonesService\Rbac\Models\UserMeta` model is used to manage user metadata.
+The `Bayfront\BonesService\Rbac\Models\UserMetaModel` is used to manage user metadata.
 
-This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
-
-The `protected_prefix` [config value](../setup.md#configuration) is used to restrict access to meta keys beginning with a protected prefix.
-This can be overridden using the [withProtectedPrefix](#withprotectedprefix) and [onlyProtectedPrefix](#onlyprotectedprefix) functions.
+This model uses the [HasProtectedPrefix](../traits/hasprotectedprefix.md) and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
 
 Due to the way the field is stored in the database, meta values will always be returned as a string.
 By JSON-encoding and decoding the value, other data types can be preserved.
-
-Protected user meta is utilized by this service to manage user access and refresh tokens.
 
 Allowed fields write:
 
@@ -30,61 +25,22 @@ Allowed fields read:
 - `meta_value`
 - `created_at`
 - `updated_at`
-- `deleted_at`
+
+Model-specific properties (string) used to return protected meta keys for TOTP's:
+
+- `$totp_meta_key_password`
+- `$totp_meta_key_tfa`
+- `$totp_meta_key_verification`
 
 Model-specific methods include:
 
-- [withProtectedPrefix](#withprotectedprefix)
-- [onlyProtectedPrefix](#onlyprotectedprefix)
-- [getProtectedPrefix](#getprotectedprefix)
+
 - [findByKey](#findbykey)
 - [createToken](#createtoken)
 - [readToken](#readtoken)
 - [deleteToken](#deletetoken)
 - [deleteAllTokens](#deletealltokens)
 - [deleteExpiredTokens](#deleteexpiredtokens)
-
-## withProtectedPrefix
-
-**Description:**
-
-Filter next query to include protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- `self`
-
-## onlyProtectedPrefix
-
-**Description:**
-
-Filter next query to include only protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- `self`
-
-## getProtectedPrefix
-
-**Description:**
-
-Get protected prefix.
-
-**Parameters:**
-
-- (none)
-
-**Returns:**
-
-- (string)
 
 ## findByKey
 
@@ -189,6 +145,213 @@ Quietly hard-delete access and refresh tokens for user.
 **Description:**
 
 Quietly delete all expired access and refresh tokens.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (void)
+
+## createPasswordRequest
+
+**Description:**
+
+Create password request, verifying TOTP wait time has elapsed.
+Value is hashed using [createHash](../rbacservice.md#createhash)
+
+**Parameters:**
+
+- `$user_id` (string)
+- `$length` (int)
+- `$type` (string): Any [RbacService](../rbacservice.md) `TOTP_TYPE_*` constant
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException`
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## getPasswordRequest
+
+**Description:**
+
+Get non-deleted password request, or quietly delete if invalid or expired.
+Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
+
+## deletePasswordRequest
+
+**Description:**
+
+Quietly hard-delete password request, if existing.
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- (bool)
+
+## deleteExpiredPasswordRequests
+
+**Description:**
+
+Quietly hard-delete all expired password requests.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (void)
+
+## createUserTotp
+
+**Description:**
+
+Create user TOTP, verifying TOTP wait time has elapsed.
+Value is hashed using [createHash](../rbacservice.md#createhash)
+
+**Parameters:**
+
+- `$user_id` (string)
+- `$length` (int)
+- `$type` (string): Any [RbacService](../rbacservice.md) `TOTP_TYPE_*` constant
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException`
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## getUserTotp
+
+**Description:**
+
+Get non-deleted user TOTP, or quietly delete if invalid or expired.
+Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
+
+## deleteUserTotp
+
+**Description:**
+
+Quietly hard-delete user TOTP, if existing.
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- (bool)
+
+## deleteExpiredUserTotps
+
+**Description:**
+
+Quietly hard-delete all expired user TOTP's.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (void)
+
+## createUserVerification
+
+**Description:**
+
+Create user verification, verifying TOTP wait time has elapsed.
+Value is hashed using [createHash](../rbacservice.md#createhash)
+
+**Parameters:**
+
+- `$user_id` (string)
+- `$length` (int)
+- `$type` (string): Any [RbacService](../rbacservice.md) `TOTP_TYPE_*` constant
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException`
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## getUserVerification
+
+**Description:**
+
+Get non-deleted user verification, or quietly delete if invalid or expired.
+Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- [Totp](../totp.md)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
+
+## deleteUserVerification
+
+**Description:**
+
+Quietly hard-delete user verification, if existing.
+
+**Parameters:**
+
+- `$user_id` (string)
+
+**Returns:**
+
+- (bool)
+
+## deleteExpiredUserVerifications
+
+**Description:**
+
+Quietly hard-delete all expired user verification TOTP's.
 
 **Parameters:**
 

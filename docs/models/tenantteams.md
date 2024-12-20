@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantTeams
+# [RBAC service](../README.md) > [Models](README.md) > TenantTeamsModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantTeams` model is used to manage tenant teams.
+The `Bayfront\BonesService\Rbac\Models\TenantTeamsModel` is used to manage tenant teams.
 
 This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
 
@@ -23,7 +23,6 @@ Allowed fields read:
 - `description`
 - `created_at`
 - `updated_at`
-- `deleted_at`
 
 Model-specific methods include:
 

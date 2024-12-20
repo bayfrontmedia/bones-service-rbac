@@ -3,20 +3,19 @@
 namespace Bayfront\BonesService\Rbac\Models;
 
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
+use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
+use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant teams model.
- */
-class TenantTeams extends RbacModel
+class TenantUserMetaModel extends RbacModel
 {
 
-    use SoftDeletes;
+    use HasProtectedPrefix, SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -27,7 +26,7 @@ class TenantTeams extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_TEAMS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USER_META);
     }
 
     /**
@@ -62,20 +61,32 @@ class TenantTeams extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant' => Tenants::class
+        'tenant_user' => TenantUsersModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'tenant_user',
+        'meta_key',
+        'meta_value'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant' => 'required|isString|lengthEquals:36',
-        'name' => 'required|isString|maxLength:255',
-        'description' => 'isString|maxLength:255'
+        'tenant_user' => 'isString|lengthEquals:36',
+        'meta_key' => 'isString|maxLength:255',
+        'meta_value' => 'isString|maxLength:4000000000'
     ];
 
     /**
@@ -88,8 +99,8 @@ class TenantTeams extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'tenant',
-            'name'
+            'tenant_user',
+            'meta_key'
         ]
     ];
 
@@ -100,12 +111,11 @@ class TenantTeams extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'tenant',
-        'name',
-        'description',
+        'tenant_user',
+        'meta_key',
+        'meta_value',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -118,9 +128,9 @@ class TenantTeams extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'tenant',
-        'name',
-        'description'
+        'tenant_user',
+        'meta_key',
+        'meta_value'
     ];
 
     /**
@@ -181,12 +191,15 @@ class TenantTeams extends RbacModel
     /**
      * Filter query before reading resource(s).
      *
+     * - Filter protected meta prefix
+     *
      * @param Query $query
      * @return Query
+     * @throws UnexpectedException
      */
     protected function onReading(Query $query): Query
     {
-        return $query;
+        return $this->filterProtectedPrefixReading($query); // Trait: HasProtectedPrefix
     }
 
     /**
@@ -228,12 +241,15 @@ class TenantTeams extends RbacModel
     /**
      * Filter fields before writing to resource (creating and updating).
      *
+     * - Filter protected meta prefix
+     *
      * @param array $fields
      * @return array
+     * @throws InvalidFieldException
      */
     protected function onWriting(array $fields): array
     {
-        return $fields;
+        return $this->filterProtectedPrefixWriting($fields); // Trait: HasProtectedPrefix
     }
 
     /**
@@ -250,12 +266,15 @@ class TenantTeams extends RbacModel
     /**
      * Actions to perform before a resource is deleted.
      *
+     * - Filter protected meta prefix
+     *
      * @param OrmResource $resource
      * @return void
+     * @throws InvalidFieldException
      */
     protected function onDeleting(OrmResource $resource): void
     {
-
+        $this->filterProtectedPrefixDeleting($resource); // Trait: HasProtectedPrefix
     }
 
     /**
@@ -287,12 +306,14 @@ class TenantTeams extends RbacModel
      * Functions executed inside another are ignored.
      * The name of the function is passed as a parameter.
      *
+     * - Reset protected meta prefix filters
+     *
      * @param string $function (Function which completed)
      * @return void
      */
     protected function onComplete(string $function): void
     {
-
+        $this->resetProtectedPrefixFilter(); // Trait: HasProtectedPrefix
     }
 
     /*
@@ -318,29 +339,29 @@ class TenantTeams extends RbacModel
      */
 
     /**
-     * Find tenant team by tenant ID and name.
+     * Find tenant user meta by tenant user ID and key value.
      *
      * Can be used with the SoftDeletes trait trashed filters.
      *
-     * @param string $tenant_id
-     * @param string $name
+     * @param string $tenant_user_id
+     * @param string $meta_key
      * @return OrmResource
      * @throws DoesNotExistException
      * @throws UnexpectedException
      */
-    public function findByName(string $tenant_id, string $name): OrmResource
+    public function findByKey(string $tenant_user_id, string $meta_key): OrmResource
     {
 
-        $team_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
-            'tenant' => $tenant_id,
-            'name' => $name
+        $meta_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant_user = :tenantUserId AND meta_key = :metaKey", [
+            'tenantUserId' => $tenant_user_id,
+            'metaKey' => $meta_key
         ]);
 
-        if (!$team_id) {
-            throw new DoesNotExistException('Unable to find tenant team: Team does not exist');
+        if (!$meta_id) {
+            throw new DoesNotExistException('Unable to find tenant user meta: Meta does not exist');
         }
 
-        return $this->find($team_id);
+        return $this->find($meta_id);
 
     }
 

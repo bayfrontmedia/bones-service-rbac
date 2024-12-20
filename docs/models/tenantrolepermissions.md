@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantRolePermissions
+# [RBAC service](../README.md) > [Models](README.md) > TenantRolePermissionsModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantRolePermissions` model is used to assign permissions to tenant roles.
+The `Bayfront\BonesService\Rbac\Models\TenantRolePermissionsModel` is used to assign permissions to tenant roles.
 
 Allowed fields write:
 

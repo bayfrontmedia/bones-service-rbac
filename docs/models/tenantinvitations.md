@@ -1,6 +1,6 @@
-# [RBAC service](../README.md) > [Models](README.md) > TenantInvitations
+# [RBAC service](../README.md) > [Models](README.md) > TenantInvitationsModel
 
-The `Bayfront\BonesService\Rbac\Models\TenantInvitations` model is used to manage tenant invitations.
+The `Bayfront\BonesService\Rbac\Models\TenantInvitationsModel` is used to manage tenant invitations.
 
 This model uses the [Prunable](https://github.com/bayfrontmedia/bones-service-orm/blob/master/src/Traits/Prunable.php) 
 and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
@@ -29,12 +29,12 @@ Allowed fields read:
 - `expires_at`
 - `created_at`
 - `updated_at`
-- `deleted_at`
 
 Model-specific methods include:
 
 - [findByEmail](#findbyemail)
-- [accept](#accept)
+- [acceptFromId](#acceptfromid)
+- [acceptFromEmail](#acceptfromemail)
 
 ## findByEmail
 
@@ -58,13 +58,36 @@ Can be used with the `SoftDeletes` trait trashed filters.
 - `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
 - `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
 
-## accept
+## acceptFromId
+
+**Description:**
+
+Accept tenant invitation using invitation ID.
+
+Adds non-deleted user to tenant with invited role and hard-deletes invitation.
+The `rbac.tenant.invitation.accepted` [event](../events.md) is executed on success.
+
+**Parameters:**
+
+- `$invitation_id` (string)
+
+**Returns:**
+
+- (void)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\DoesNotExistException`
+- `Bayfront\BonesService\Orm\Exceptions\InvalidFieldException`
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## acceptFromEmail
 
 **Description:**
 
 Accept tenant invitation using email and tenant ID.
 
-Adds non-deleted user to tenant with invited role and deletes invitation.
+Adds non-deleted user to tenant with invited role and hard-deletes invitation.
 The `rbac.tenant.invitation.accepted` [event](../events.md) is executed on success.
 
 **Parameters:**

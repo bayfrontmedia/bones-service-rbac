@@ -16,10 +16,7 @@ use Bayfront\SimplePdo\Query;
 use Bayfront\StringHelpers\Str;
 use Bayfront\TimeHelpers\Time;
 
-/**
- * User keys model.
- */
-class UserKeys extends RbacModel
+class UserKeysModel extends RbacModel
 {
 
     use Castable, Prunable, SoftDeletes;
@@ -68,19 +65,30 @@ class UserKeys extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'user' => Users::class
+        'user' => UsersModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'user',
+        'name'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'user' => 'required|isString|lengthEquals:36',
-        'name' => 'required|isString|maxLength:255',
+        'user' => 'isString|lengthEquals:36',
+        'name' => 'isString|maxLength:255',
         'allowed_domains' => 'isArray',
         'allowed_ips' => 'isArray',
         'expires_at' => 'date:Y-m-d H:i:s'
@@ -115,8 +123,7 @@ class UserKeys extends RbacModel
         'expires_at',
         'last_used',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -210,7 +217,7 @@ class UserKeys extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.created', $resource);
+        $this->ormService->events->doEvent('rbac.user.key.created', $resource);
     }
 
     /**
@@ -278,7 +285,7 @@ class UserKeys extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.updated', $resource, $previous, $fields);
+        $this->ormService->events->doEvent('rbac.user.key.updated', $resource, $previous, $fields);
     }
 
     /**
@@ -329,7 +336,7 @@ class UserKeys extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-        $this->rbacService->ormService->events->doEvent('rbac.user.key.deleted', $resource);
+        $this->ormService->events->doEvent('rbac.user.key.deleted', $resource);
     }
 
     /**
@@ -417,7 +424,7 @@ class UserKeys extends RbacModel
     private function hashedKeyExists(string $hashed_key): bool
     {
 
-        return $this->rbacService->ormService->db->exists($this->table_name, [
+        return $this->ormService->db->exists($this->table_name, [
             'key_value' => $hashed_key
         ]);
 
@@ -436,7 +443,7 @@ class UserKeys extends RbacModel
     public function findByKey(string $key): OrmResource
     {
 
-        $key_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE key_value = :keyValue", [
+        $key_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE key_value = :keyValue", [
             'keyValue' => App::createHash($key, App::getConfig('app.key', ''), 'sha256', true)
         ]);
 

@@ -2,23 +2,22 @@
 
 namespace Bayfront\BonesService\Rbac\Models;
 
+use Bayfront\BonesService\Orm\Exceptions\AlreadyExistsException;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
+use Bayfront\BonesService\Orm\Traits\Prunable;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
-use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
 use Bayfront\SimplePdo\Query;
+use Bayfront\TimeHelpers\Time;
 
-/**
- * Tenant user meta model.
- */
-class TenantUserMeta extends RbacModel
+class TenantInvitationsModel extends RbacModel
 {
 
-    use HasProtectedPrefix, SoftDeletes;
+    use Prunable, SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -29,7 +28,7 @@ class TenantUserMeta extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_USER_META);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_INVITATIONS);
     }
 
     /**
@@ -64,20 +63,33 @@ class TenantUserMeta extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'tenant_user' => TenantUsers::class
+        'tenant' => TenantsModel::class,
+        'role' => TenantRolesModel::class
+    ];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'email',
+        'tenant',
+        'role'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant_user' => 'required|isString|lengthEquals:36',
-        'meta_key' => 'required|isString|maxLength:255',
-        'meta_value' => 'required|isString|maxLength:4000000000'
+        'email' => 'email|maxLength:255',
+        'tenant' => 'isString|lengthEquals:36',
+        'role' => 'isString|lengthEquals:36'
     ];
 
     /**
@@ -90,8 +102,8 @@ class TenantUserMeta extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'tenant_user',
-            'meta_key'
+            'email',
+            'tenant'
         ]
     ];
 
@@ -102,12 +114,12 @@ class TenantUserMeta extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'tenant_user',
-        'meta_key',
-        'meta_value',
+        'email',
+        'tenant',
+        'role',
+        'expires_at',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -120,9 +132,9 @@ class TenantUserMeta extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'tenant_user',
-        'meta_key',
-        'meta_value'
+        'email',
+        'tenant',
+        'role'
     ];
 
     /**
@@ -159,6 +171,7 @@ class TenantUserMeta extends RbacModel
      * Filter fields before creating resource.
      *
      * - Create UUID
+     * - Define expires_at
      *
      * @param array $fields
      * @return array
@@ -166,6 +179,7 @@ class TenantUserMeta extends RbacModel
     protected function onCreating(array $fields): array
     {
         $fields['id'] = $this->createUuid();
+        $fields['expires_at'] = Time::getDateTime(time() + ($this->rbacService->getConfig('invitation_duration', 0) * 60));
         return $fields;
     }
 
@@ -177,21 +191,18 @@ class TenantUserMeta extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.invitation.created', $resource);
     }
 
     /**
      * Filter query before reading resource(s).
      *
-     * - Filter protected meta prefix
-     *
      * @param Query $query
      * @return Query
-     * @throws UnexpectedException
      */
     protected function onReading(Query $query): Query
     {
-        return $this->filterProtectedPrefixReading($query); // Trait: HasProtectedPrefix
+        return $query;
     }
 
     /**
@@ -233,15 +244,12 @@ class TenantUserMeta extends RbacModel
     /**
      * Filter fields before writing to resource (creating and updating).
      *
-     * - Filter protected meta prefix
-     *
      * @param array $fields
      * @return array
-     * @throws InvalidFieldException
      */
     protected function onWriting(array $fields): array
     {
-        return $this->filterProtectedPrefixWriting($fields); // Trait: HasProtectedPrefix
+        return $fields;
     }
 
     /**
@@ -258,15 +266,12 @@ class TenantUserMeta extends RbacModel
     /**
      * Actions to perform before a resource is deleted.
      *
-     * - Filter protected meta prefix
-     *
      * @param OrmResource $resource
      * @return void
-     * @throws InvalidFieldException
      */
     protected function onDeleting(OrmResource $resource): void
     {
-        $this->filterProtectedPrefixDeleting($resource); // Trait: HasProtectedPrefix
+
     }
 
     /**
@@ -298,14 +303,12 @@ class TenantUserMeta extends RbacModel
      * Functions executed inside another are ignored.
      * The name of the function is passed as a parameter.
      *
-     * - Reset protected meta prefix filters
-     *
      * @param string $function (Function which completed)
      * @return void
      */
     protected function onComplete(string $function): void
     {
-        $this->resetProtectedPrefixFilter(); // Trait: HasProtectedPrefix
+
     }
 
     /*
@@ -313,6 +316,16 @@ class TenantUserMeta extends RbacModel
      * | Traits
      * |--------------------------------------------------------------------------
      */
+
+    /**
+     * Trait: Prunable
+     *
+     * @inheritDoc
+     */
+    protected function getPruneField(): string
+    {
+        return 'expires_at';
+    }
 
     /**
      * Trait: SoftDeletes
@@ -331,29 +344,160 @@ class TenantUserMeta extends RbacModel
      */
 
     /**
-     * Find tenant user meta by tenant user ID and key value.
+     * Find tenant invitation by email and tenant ID.
      *
      * Can be used with the SoftDeletes trait trashed filters.
      *
-     * @param string $tenant_user_id
-     * @param string $meta_key
+     * @param string $email
+     * @param string $tenant_id
      * @return OrmResource
      * @throws DoesNotExistException
      * @throws UnexpectedException
      */
-    public function findByKey(string $tenant_user_id, string $meta_key): OrmResource
+    public function findByEmail(string $email, string $tenant_id): OrmResource
     {
 
-        $meta_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant_user = :tenantUserId AND meta_key = :metaKey", [
-            'tenantUserId' => $tenant_user_id,
-            'metaKey' => $meta_key
+        $invitation_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email AND tenant = :tenant", [
+            'email' => $email,
+            'tenant' => $tenant_id
         ]);
 
-        if (!$meta_id) {
-            throw new DoesNotExistException('Unable to find tenant user meta: Meta does not exist');
+        if (!$invitation_id) {
+            throw new DoesNotExistException('Unable to find tenant invitation: Invitation does not exist');
         }
 
-        return $this->find($meta_id);
+        return $this->find($invitation_id);
+
+    }
+
+    /**
+     * Accept invitation.
+     *
+     * @param array $invitation (Keys: id, email, tenant, role, expires_at)
+     * @return void
+     * @throws DoesNotExistException
+     * @throws InvalidFieldException
+     * @throws UnexpectedException
+     */
+    private function acceptInvitation(array $invitation): void
+    {
+
+        // Delete if expired
+
+        if (Time::inPast($invitation['expires_at'])) {
+
+            $this->delete($invitation['id']);
+            throw new DoesNotExistException('Unable to verify tenant invitation: Invitation is expired');
+
+        }
+
+        // Check user exists with email
+
+        $usersModel = new UsersModel($this->rbacService);
+
+        $user = $usersModel->findByEmail($invitation['email']);
+
+        // Add user to tenant
+
+        $tenantUsersModel = new TenantUsersModel($this->rbacService);
+
+        try {
+
+            $tu = $tenantUsersModel->create([
+                'tenant' => $invitation['tenant'],
+                'user' => $user->getPrimaryKey()
+            ]);
+
+        } catch (AlreadyExistsException) { // User has already been added to tenant
+
+            $tu = $tenantUsersModel->findByUserId($invitation['tenant'], $user->getPrimaryKey());
+
+        }
+
+        // Add tenant user to role
+
+        $tenantUserRolesModel = new TenantUserRolesModel($this->rbacService);
+
+        try {
+
+            $tenantUserRolesModel->create([
+                'tenant_user' => $tu->getPrimaryKey(),
+                'role' => $invitation['role']
+            ]);
+
+        } catch (AlreadyExistsException) {
+            // User already has role. Do nothing
+        }
+
+        // Delete invitation
+
+        $this->hardDelete($invitation['id']);
+
+        $this->ormService->events->doEvent('rbac.tenant.invitation.accepted', $user, $invitation['tenant']);
+
+    }
+
+    /**
+     * Accept tenant invitation using invitation ID.
+     *
+     * Adds non-deleted user to tenant with invited role and hard-deletes invitation.
+     * The rbac.tenant.invitation.accepted event is executed on success.
+     *
+     * @param string $invitation_id
+     * @return void
+     * @throws DoesNotExistException
+     * @throws InvalidFieldException
+     * @throws UnexpectedException
+     */
+    public function acceptFromId(string $invitation_id): void
+    {
+
+        // Get invitation
+
+        $deleted_at_field = $this->getDeletedAtField();
+
+        $invitation = $this->ormService->db->row("SELECT id, email, tenant, role, expires_at FROM $this->table_name WHERE id = :id AND $deleted_at_field IS NULL", [
+            'id' => $invitation_id
+        ]);
+
+        if (!$invitation) {
+            throw new DoesNotExistException('Unable to verify tenant invitation: Invitation does not exist');
+        }
+
+        $this->acceptInvitation($invitation);
+
+    }
+
+    /**
+     * Accept tenant invitation using email and tenant ID.
+     *
+     * Adds non-deleted user to tenant with invited role and hard-deletes invitation.
+     * The rbac.tenant.invitation.accepted event is executed on success.
+     *
+     * @param string $email
+     * @param string $tenant_id
+     * @return void
+     * @throws DoesNotExistException
+     * @throws InvalidFieldException
+     * @throws UnexpectedException
+     */
+    public function acceptFromEmail(string $email, string $tenant_id): void
+    {
+
+        // Get invitation
+
+        $deleted_at_field = $this->getDeletedAtField();
+
+        $invitation = $this->ormService->db->row("SELECT id, email, tenant, role, expires_at FROM $this->table_name WHERE email = :email AND tenant = :tenant AND $deleted_at_field IS NULL", [
+            'email' => $email,
+            'tenant' => $tenant_id
+        ]);
+
+        if (!$invitation) {
+            throw new DoesNotExistException('Unable to verify tenant invitation: Invitation does not exist');
+        }
+
+        $this->acceptInvitation($invitation);
 
     }
 

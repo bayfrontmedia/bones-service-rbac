@@ -10,10 +10,7 @@ use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
-/**
- * Tenant roles model.
- */
-class TenantRoles extends RbacModel
+class PermissionsModel extends RbacModel
 {
 
     use SoftDeletes;
@@ -27,7 +24,7 @@ class TenantRoles extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_ROLES);
+        parent::__construct($rbacService, $rbacService::TABLE_PERMISSIONS);
     }
 
     /**
@@ -61,20 +58,27 @@ class TenantRoles extends RbacModel
      *
      * @var array
      */
-    protected array $related_fields = [
-        'tenant' => Tenants::class
+    protected array $related_fields = [];
+
+    /**
+     * Fields which are required when creating resource.
+     *
+     * @var array
+     */
+    protected array $required_fields = [
+        'name'
     ];
 
     /**
      * Rules for any fields which can be written to the resource.
+     * If a field is required, use $required_fields instead.
      *
      * See: https://github.com/bayfrontmedia/php-validator/blob/master/docs/validator.md
      *
      * @var array
      */
     protected array $allowed_fields_write = [
-        'tenant' => 'required|isString|lengthEquals:36',
-        'name' => 'required|isString|maxLength:255',
+        'name' => 'isString|maxLength:255',
         'description' => 'isString|maxLength:255'
     ];
 
@@ -87,10 +91,7 @@ class TenantRoles extends RbacModel
      * @var array
      */
     protected array $unique_fields = [
-        [
-            'tenant',
-            'name'
-        ]
+        'name'
     ];
 
     /**
@@ -100,12 +101,10 @@ class TenantRoles extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'tenant',
         'name',
         'description',
         'created_at',
-        'updated_at',
-        'deleted_at'
+        'updated_at'
     ];
 
     /**
@@ -118,7 +117,6 @@ class TenantRoles extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'tenant',
         'name',
         'description'
     ];
@@ -155,8 +153,6 @@ class TenantRoles extends RbacModel
 
     /**
      * Filter fields before creating resource.
-     *
-     * - Create UUID
      *
      * @param array $fields
      * @return array
@@ -318,29 +314,27 @@ class TenantRoles extends RbacModel
      */
 
     /**
-     * Find tenant role by tenant ID and name.
+     * Find permission by name.
      *
      * Can be used with the SoftDeletes trait trashed filters.
      *
-     * @param string $tenant_id
      * @param string $name
      * @return OrmResource
      * @throws DoesNotExistException
      * @throws UnexpectedException
      */
-    public function findByName(string $tenant_id, string $name): OrmResource
+    public function findByName(string $name): OrmResource
     {
 
-        $role_id = $this->rbacService->ormService->db->single("SELECT id FROM $this->table_name WHERE tenant = :tenant AND name = :name", [
-            'tenant' => $tenant_id,
+        $permission_id = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE name = :name", [
             'name' => $name
         ]);
 
-        if (!$role_id) {
-            throw new DoesNotExistException('Unable to find tenant role: Role does not exist');
+        if (!$permission_id) {
+            throw new DoesNotExistException('Unable to find permission: Permission does not exist');
         }
 
-        return $this->find($role_id);
+        return $this->find($permission_id);
 
     }
 
