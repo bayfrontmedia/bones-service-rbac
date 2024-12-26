@@ -8,6 +8,7 @@ use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\Castable;
+use Bayfront\BonesService\Orm\Traits\HasOmittedFields;
 use Bayfront\BonesService\Orm\Traits\Prunable;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
@@ -19,7 +20,7 @@ use Bayfront\TimeHelpers\Time;
 class UserKeysModel extends RbacModel
 {
 
-    use Castable, Prunable, SoftDeletes;
+    use Castable, HasOmittedFields, Prunable, SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -370,6 +371,18 @@ class UserKeysModel extends RbacModel
      * | Traits
      * |--------------------------------------------------------------------------
      */
+
+    /**
+     * Trait: HasOmittedFields
+     *
+     * @inheritDoc
+     */
+    public function getOmittedFields(): array
+    {
+        return [
+            'key_value'
+        ];
+    }
 
     /**
      * Trait: Prunable

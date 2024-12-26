@@ -2,7 +2,7 @@
 
 The `Bayfront\BonesService\Rbac\Models\UserKeysModel` is used to manage user API keys.
 
-This model uses the [Prunable](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/prunable.md) and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
+This model uses the [HasOmittedFields](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/hasomittedfields.md), [Prunable](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/prunable.md) and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
 
 The `rbac.user.key.created`, `rbac.user.key.updated` and `rbac.user.key.deleted` [events](../events.md) are executed.
 
@@ -36,6 +36,10 @@ Allowed fields read:
 - `last_used`
 - `created_at`
 - `updated_at`
+
+Omitted fields:
+
+- `key_value`
 
 Model-specific methods include:
 

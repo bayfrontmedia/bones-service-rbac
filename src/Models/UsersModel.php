@@ -9,6 +9,7 @@ use Bayfront\BonesService\Orm\Exceptions\InvalidRequestException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\Castable;
+use Bayfront\BonesService\Orm\Traits\HasOmittedFields;
 use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
@@ -19,7 +20,7 @@ use Exception;
 class UsersModel extends RbacModel
 {
 
-    use Castable, SoftDeletes;
+    use Castable, HasOmittedFields, SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -427,6 +428,19 @@ class UsersModel extends RbacModel
      * | Traits
      * |--------------------------------------------------------------------------
      */
+
+    /**
+     * Trait: HasOmittedFields
+     *
+     * @inheritDoc
+     */
+    public function getOmittedFields(): array
+    {
+        return [
+            'password',
+            'salt'
+        ];
+    }
 
     /**
      * Trait: SoftDeletes
