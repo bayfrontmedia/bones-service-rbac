@@ -9,7 +9,7 @@ Allowed fields write:
 
 Unique fields:
 
-- `tenant_user` + `permission`
+- `tenant_user` + `role`
 
 Allowed fields read:
 
