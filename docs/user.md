@@ -20,7 +20,7 @@ Methods include:
 - [getTenantInvitations](#gettenantinvitations)
 - [getTenants](#gettenants)
 - [inTenant](#intenant)
-- [inActiveTenant](#inactivetenant)
+- [inEnabledTenant](#inenabledtenant)
 - [getOwnedTenants](#getownedtenants)
 - [ownsTenant](#ownstenant)
 - [getTenantUserIds](#gettenantuserids)
@@ -247,11 +247,11 @@ Is user in tenant?
 
 - `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
 
-## inActiveTenant
+## inEnabledTenant
 
 **Description:**
 
-Is user in active tenant?
+Is user in enabled tenant?
 
 **Parameters:**
 

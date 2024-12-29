@@ -301,13 +301,13 @@ class User
     }
 
     /**
-     * Is user in active tenant?
+     * Is user in enabled tenant?
      *
      * @param string $tenant_id
      * @return bool
      * @throws UnexpectedException
      */
-    public function inActiveTenant(string $tenant_id): bool
+    public function inEnabledTenant(string $tenant_id): bool
     {
 
         foreach ($this->getTenants() as $tenant) {
