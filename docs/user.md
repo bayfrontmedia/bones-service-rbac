@@ -20,6 +20,7 @@ Methods include:
 - [getTenantInvitations](#gettenantinvitations)
 - [getTenants](#gettenants)
 - [inTenant](#intenant)
+- [inActiveTenant](#inactivetenant)
 - [getOwnedTenants](#getownedtenants)
 - [ownsTenant](#ownstenant)
 - [getTenantUserIds](#gettenantuserids)
@@ -233,6 +234,24 @@ Get all tenants user belongs to.
 **Description:**
 
 Is user in tenant?
+
+**Parameters:**
+
+- `$tenant_id` (string)
+
+**Returns:**
+
+- (bool)
+
+**Throws:**
+
+- `Bayfront\BonesService\Orm\Exceptions\UnexpectedException`
+
+## inActiveTenant
+
+**Description:**
+
+Is user in active tenant?
 
 **Parameters:**
 

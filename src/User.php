@@ -301,6 +301,30 @@ class User
     }
 
     /**
+     * Is user in active tenant?
+     *
+     * @param string $tenant_id
+     * @return bool
+     * @throws UnexpectedException
+     */
+    public function inActiveTenant(string $tenant_id): bool
+    {
+
+        foreach ($this->getTenants() as $tenant) {
+
+            if (Arr::get($tenant, 'id') == $tenant_id) {
+
+                return $this->tenantIsEnabled($tenant_id);
+
+            }
+
+        }
+
+        return false;
+
+    }
+
+    /**
      * Get all tenants owned by user.
      *
      * @return array
