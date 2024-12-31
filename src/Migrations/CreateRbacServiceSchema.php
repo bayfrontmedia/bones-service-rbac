@@ -94,7 +94,7 @@ class CreateRbacServiceSchema implements MigrationInterface
             `deleted_at` datetime NULL DEFAULT NULL,
             PRIMARY KEY (`id`), 
             UNIQUE (`domain`),
-            CONSTRAINT `fk_t_owner__u_id` FOREIGN KEY (`owner`) REFERENCES $this->table_users (`id`) ON DELETE CASCADE)
+            CONSTRAINT `fk_t_owner__u_id` FOREIGN KEY (`owner`) REFERENCES $this->table_users (`id`) ON DELETE SET NULL)
             ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $this->db->query("CREATE TABLE IF NOT EXISTS $this->table_tenant_users (
