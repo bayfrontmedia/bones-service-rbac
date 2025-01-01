@@ -84,7 +84,7 @@ class CreateRbacServiceSchema implements MigrationInterface
 
         $this->db->query("CREATE TABLE IF NOT EXISTS $this->table_tenants (
             `id` char(36) NOT NULL,
-            `owner` char(36) NOT NULL,
+            `owner` char(36) NULL DEFAULT NULL,
             `domain` varchar(63) NOT NULL,
             `name` varchar(255) NOT NULL,
             `meta` JSON NULL DEFAULT NULL,
