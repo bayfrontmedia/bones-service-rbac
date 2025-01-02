@@ -16,6 +16,7 @@ class CreateRbacServiceSchema implements MigrationInterface
     private string $table_permissions;
     private string $table_tenant_invitations;
     private string $table_tenant_meta;
+    private string $table_tenant_permissions;
     private string $table_tenant_role_permissions;
     private string $table_tenant_roles;
     private string $table_tenant_teams;
@@ -38,6 +39,7 @@ class CreateRbacServiceSchema implements MigrationInterface
         $this->table_permissions = $rbacService->getTableName($rbacService::TABLE_PERMISSIONS);
         $this->table_tenant_invitations = $rbacService->getTableName($rbacService::TABLE_TENANT_INVITATIONS);
         $this->table_tenant_meta = $rbacService->getTableName($rbacService::TABLE_TENANT_META);
+        $this->table_tenant_permissions = $rbacService->getTableName($rbacService::TABLE_TENANT_PERMISSIONS);
         $this->table_tenant_role_permissions = $rbacService->getTableName($rbacService::TABLE_TENANT_ROLE_PERMISSIONS);
         $this->table_tenant_roles = $rbacService->getTableName($rbacService::TABLE_TENANT_ROLES);
         $this->table_tenant_teams = $rbacService->getTableName($rbacService::TABLE_TENANT_TEAMS);
@@ -120,6 +122,18 @@ class CreateRbacServiceSchema implements MigrationInterface
             UNIQUE (`name`))
             ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+        $this->db->query("CREATE TABLE IF NOT EXISTS $this->table_tenant_permissions (
+            `id` char(36) NOT NULL,
+            `tenant` char(36) NOT NULL,
+            `permission` char(36) NOT NULL,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+            `updated_at` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(),
+            PRIMARY KEY (`id`),
+            UNIQUE (`tenant`,`permission`),
+            CONSTRAINT `fk_tp_tenant__t_id` FOREIGN KEY (`tenant`) REFERENCES $this->table_tenants (`id`) ON DELETE CASCADE,
+            CONSTRAINT `fk_tp_permission__p_id` FOREIGN KEY (`permission`) REFERENCES $this->table_permissions (`id`) ON DELETE CASCADE) 
+            ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
         $this->db->query("CREATE TABLE IF NOT EXISTS $this->table_tenant_roles (
             `id` char(36) NOT NULL,
             `tenant` char(36) NOT NULL,
@@ -136,13 +150,13 @@ class CreateRbacServiceSchema implements MigrationInterface
         $this->db->query("CREATE TABLE IF NOT EXISTS $this->table_tenant_role_permissions (
             `id` char(36) NOT NULL,
             `role` char(36) NOT NULL,
-            `permission` char(36) NOT NULL,
+            `tenant_permission` char(36) NOT NULL,
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP(),
             `updated_at` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(),
             PRIMARY KEY (`id`),
-            UNIQUE (`role`,`permission`),
+            UNIQUE (`role`,`tenant_permission`),
             CONSTRAINT `fk_trp_role__tr_id` FOREIGN KEY (`role`) REFERENCES $this->table_tenant_roles (`id`) ON DELETE CASCADE,
-            CONSTRAINT `fk_trp_permission__p_id` FOREIGN KEY (`permission`) REFERENCES $this->table_permissions (`id`) ON DELETE CASCADE) 
+            CONSTRAINT `fk_trp_tenant_permission__tp_id` FOREIGN KEY (`tenant_permission`) REFERENCES $this->table_tenant_permissions (`id`) ON DELETE CASCADE) 
             ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $this->db->query("CREATE TABLE IF NOT EXISTS $this->table_tenant_user_roles (
@@ -272,6 +286,7 @@ class CreateRbacServiceSchema implements MigrationInterface
         $this->db->query("DROP TABLE IF EXISTS $this->table_tenant_user_roles");
         $this->db->query("DROP TABLE IF EXISTS $this->table_tenant_role_permissions");
         $this->db->query("DROP TABLE IF EXISTS $this->table_tenant_roles");
+        $this->db->query("DROP TABLE IF EXISTS $this->table_tenant_permissions");
         $this->db->query("DROP TABLE IF EXISTS $this->table_permissions");
         $this->db->query("DROP TABLE IF EXISTS $this->table_tenant_users");
         $this->db->query("DROP TABLE IF EXISTS $this->table_tenants");

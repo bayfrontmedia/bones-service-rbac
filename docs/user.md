@@ -492,7 +492,7 @@ Is user in team?
 **Description:**
 
 Get all user permissions for tenant.
-Tenant owners automatically inherit all permissions.
+Admins and tenant owners automatically inherit all permissions.
 If user or tenant is disabled, user will inherit no permissions.
 
 **Parameters:**

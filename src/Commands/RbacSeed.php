@@ -5,6 +5,7 @@ namespace Bayfront\BonesService\Rbac\Commands;
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Exceptions\ServiceException;
 use Bayfront\BonesService\Rbac\Models\PermissionsModel;
+use Bayfront\BonesService\Rbac\Models\TenantPermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantRolePermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantRolesModel;
 use Bayfront\BonesService\Rbac\Models\TenantsModel;
@@ -77,6 +78,7 @@ class RbacSeed extends Command
         try {
 
             $permissions = new PermissionsModel($this->rbacService);
+            $tenantPermissions = new TenantPermissionsModel($this->rbacService);
             $tenantRolePermissions = new TenantRolePermissionsModel($this->rbacService);
             $tenantRoles = new TenantRolesModel($this->rbacService);
             $tenants = new TenantsModel($this->rbacService);
@@ -166,6 +168,26 @@ class RbacSeed extends Command
                 'description' => 'Delete records'
             ]);
 
+            $tp_create = $tenantPermissions->create([
+                'tenant' => $tenant->getPrimaryKey(),
+                'permission' => $p_create->getPrimaryKey()
+            ]);
+
+            $tp_read = $tenantPermissions->create([
+                'tenant' => $tenant->getPrimaryKey(),
+                'permission' => $p_read->getPrimaryKey()
+            ]);
+
+            $tp_update = $tenantPermissions->create([
+                'tenant' => $tenant->getPrimaryKey(),
+                'permission' => $p_update->getPrimaryKey()
+            ]);
+
+            $tp_delete = $tenantPermissions->create([
+                'tenant' => $tenant->getPrimaryKey(),
+                'permission' => $p_delete->getPrimaryKey()
+            ]);
+
             $role_admin = $tenantRoles->create([
                 'tenant' => $tenant->getPrimaryKey(),
                 'name' => 'Administrator',
@@ -180,27 +202,27 @@ class RbacSeed extends Command
 
             $tenantRolePermissions->create([
                 'role' => $role_admin->getPrimaryKey(),
-                'permission' => $p_create->getPrimaryKey()
+                'tenant_permission' => $tp_create->getPrimaryKey()
             ]);
 
             $tenantRolePermissions->create([
                 'role' => $role_admin->getPrimaryKey(),
-                'permission' => $p_read->getPrimaryKey()
+                'tenant_permission' => $tp_read->getPrimaryKey()
             ]);
 
             $tenantRolePermissions->create([
                 'role' => $role_admin->getPrimaryKey(),
-                'permission' => $p_update->getPrimaryKey()
+                'tenant_permission' => $tp_update->getPrimaryKey()
             ]);
 
             $tenantRolePermissions->create([
                 'role' => $role_admin->getPrimaryKey(),
-                'permission' => $p_delete->getPrimaryKey()
+                'tenant_permission' => $tp_delete->getPrimaryKey()
             ]);
 
             $tenantRolePermissions->create([
                 'role' => $role_read_only->getPrimaryKey(),
-                'permission' => $p_read->getPrimaryKey()
+                'tenant_permission' => $tp_read->getPrimaryKey()
             ]);
 
             $tu_employee = $tenantUsers->create([

@@ -57,6 +57,7 @@ class RbacService extends Service
     public const TABLE_TENANT_INVITATIONS = 'tenant_invitations';
     public const TABLE_TENANT_META = 'tenant_meta';
     public const TABLE_TENANT_ROLE_PERMISSIONS = 'tenant_role_permissions';
+    public const TABLE_TENANT_PERMISSIONS = 'tenant_permissions';
     public const TABLE_TENANT_ROLES = 'tenant_roles';
     public const TABLE_TENANT_TEAMS = 'tenant_teams';
     public const TABLE_TENANT_USER_META = 'tenant_user_meta';

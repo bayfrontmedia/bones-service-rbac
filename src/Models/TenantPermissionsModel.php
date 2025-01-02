@@ -7,7 +7,7 @@ use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
-class TenantRolePermissionsModel extends RbacModel
+class TenantPermissionsModel extends RbacModel
 {
 
     /**
@@ -19,7 +19,7 @@ class TenantRolePermissionsModel extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_TENANT_ROLE_PERMISSIONS);
+        parent::__construct($rbacService, $rbacService::TABLE_TENANT_PERMISSIONS);
     }
 
     /**
@@ -54,8 +54,8 @@ class TenantRolePermissionsModel extends RbacModel
      * @var array
      */
     protected array $related_fields = [
-        'role' => TenantRolesModel::class,
-        'tenant_permission' => TenantPermissionsModel::class
+        'tenant' => TenantsModel::class,
+        'permission' => PermissionsModel::class
     ];
 
     /**
@@ -64,8 +64,8 @@ class TenantRolePermissionsModel extends RbacModel
      * @var array
      */
     protected array $required_fields = [
-        'role',
-        'tenant_permission'
+        'tenant',
+        'permission'
     ];
 
     /**
@@ -77,8 +77,8 @@ class TenantRolePermissionsModel extends RbacModel
      * @var array
      */
     protected array $allowed_fields_write = [
-        'role' => 'isString|lengthEquals:36',
-        'tenant_permission' => 'isString|lengthEquals:36'
+        'tenant' => 'isString|lengthEquals:36',
+        'permission' => 'isString|lengthEquals:36'
     ];
 
     /**
@@ -91,8 +91,8 @@ class TenantRolePermissionsModel extends RbacModel
      */
     protected array $unique_fields = [
         [
-            'role',
-            'tenant_permission'
+            'tenant',
+            'permission'
         ]
     ];
 
@@ -103,8 +103,8 @@ class TenantRolePermissionsModel extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'role',
-        'tenant_permission',
+        'tenant',
+        'permission',
         'created_at',
         'updated_at'
     ];
@@ -119,8 +119,8 @@ class TenantRolePermissionsModel extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'role',
-        'tenant_permission'
+        'tenant',
+        'permission'
     ];
 
     /**
@@ -214,7 +214,7 @@ class TenantRolePermissionsModel extends RbacModel
 
     /**
      * Actions to perform after a resource is updated.
-     *
+
      * @param OrmResource $resource (Newly updated resource)
      * @param OrmResource $previous (Previously existing resource)
      * @param array $fields (Updated fields)

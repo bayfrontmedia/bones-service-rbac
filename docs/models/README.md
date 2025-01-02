@@ -9,6 +9,7 @@ All models use a UUIDv7 as the primary key.
 - [PermissionsModel](permissions.md)
 - [TenantInvitationsModel](tenantinvitations.md)
 - [TenantMetaModel](tenantmeta.md)
+- [TenantPermissionsModel](tenantpermissions.md)
 - [TenantRolePermissionsModel](tenantrolepermissions.md)
 - [TenantRolesModel](tenantroles.md)
 - [TenantsModel](tenants.md)

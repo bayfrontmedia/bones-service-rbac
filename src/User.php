@@ -9,8 +9,8 @@ use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Utilities\Parsers\QueryParser;
-use Bayfront\BonesService\Rbac\Models\PermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantInvitationsModel;
+use Bayfront\BonesService\Rbac\Models\TenantPermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantRolePermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantUserMetaModel;
 use Bayfront\BonesService\Rbac\Models\TenantUserRolesModel;
@@ -661,22 +661,22 @@ class User
             return;
         }
 
-        if (!$this->tenantIsEnabled($tenant_id)) {
+        if (!$this->isAdmin() && !$this->tenantIsEnabled($tenant_id)) {
             $this->permissions[$tenant_id] = [];
             return;
         }
 
-        if ($this->ownsTenant($tenant_id)) {
+        if ($this->isAdmin() || $this->ownsTenant($tenant_id)) {
 
-            $permissionsModel = new PermissionsModel($this->rbacService);
+            $tenantPermissionsModel = new TenantPermissionsModel($this->rbacService);
 
-            $permissions = $permissionsModel->list(new QueryParser([
+            $permissions = $tenantPermissionsModel->list(new QueryParser([
                 'fields' => [
-                    '*'
+                    'permission.*'
                 ]
             ]), true);
 
-            $this->permissions[$tenant_id] = $permissions->list();
+            $this->permissions[$tenant_id] = Arr::pluck($permissions->list(), 'fields');
 
         } else {
 
@@ -684,7 +684,7 @@ class User
 
             $permissions = $tenantRolePermissionsModel->list(new QueryParser([
                 'fields' => [
-                    'permission.*'
+                    'tenant_permission.*.*'
                 ],
                 'filter' => [
                     [
@@ -695,7 +695,7 @@ class User
                 ]
             ]), true);
 
-            $this->permissions[$tenant_id] = Arr::pluck($permissions->list(), 'permission');
+            $this->permissions[$tenant_id] = Arr::pluck($permissions->list(), 'tenant_permission.permission');
 
         }
 
@@ -703,7 +703,7 @@ class User
 
     /**
      * Get all user permissions for tenant.
-     * Tenant owners automatically inherit all permissions.
+     * Admins and tenant owners automatically inherit all permissions.
      * If user or tenant is disabled, user will inherit no permissions.
      *
      * @param string $tenant_id
