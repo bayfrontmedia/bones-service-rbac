@@ -676,7 +676,7 @@ class User
                 ]
             ]), true);
 
-            $this->permissions[$tenant_id] = Arr::pluck($permissions->list(), 'fields');
+            $this->permissions[$tenant_id] = Arr::pluck($permissions->list(), 'permission');
 
         } else {
 
