@@ -47,6 +47,11 @@ return [
             'max_limit' => -1,
             'max_related_depth' => 3,
         ],
+         'tenant_permissions' => [
+            'default_limit' => 100,
+            'max_limit' => -1,
+            'max_related_depth' => 3,
+        ],
         'tenant_role_permissions' => [
             'default_limit' => 100,
             'max_limit' => -1,
