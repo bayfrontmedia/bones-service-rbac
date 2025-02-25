@@ -9,6 +9,7 @@ use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Utilities\Parsers\QueryParser;
+use Bayfront\BonesService\Rbac\Models\PermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantInvitationsModel;
 use Bayfront\BonesService\Rbac\Models\TenantPermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantRolePermissionsModel;
@@ -666,7 +667,17 @@ class User
             return;
         }
 
-        if ($this->isAdmin() || $this->ownsTenant($tenant_id)) {
+        if ($this->isAdmin()) {
+
+            $permissionsModel = new PermissionsModel($this->rbacService);
+
+            $permissions = $permissionsModel->list(new QueryParser([
+
+            ]), true);
+
+            $this->permissions[$tenant_id] = $permissions->list();
+
+        } else if ($this->ownsTenant($tenant_id)) {
 
             $tenantPermissionsModel = new TenantPermissionsModel($this->rbacService);
 
@@ -710,7 +721,8 @@ class User
 
     /**
      * Get all user permissions for tenant.
-     * Admins and tenant owners automatically inherit all permissions.
+     * Admins inherit all existing permissions.
+     * Tenant owners inherit all tenant permissions.
      * If user or tenant is disabled, user will inherit no permissions.
      *
      * @param string $tenant_id
