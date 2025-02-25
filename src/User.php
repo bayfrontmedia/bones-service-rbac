@@ -672,7 +672,9 @@ class User
             $permissionsModel = new PermissionsModel($this->rbacService);
 
             $permissions = $permissionsModel->list(new QueryParser([
-
+                'fields' => [
+                    '*'
+                ]
             ]), true);
 
             $this->permissions[$tenant_id] = $permissions->list();
