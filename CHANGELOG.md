@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated dependencies
 - Updated `User` class so admin users inherit all existing permissions for every tenant
+- Updated documentation
 
 ### Removed
 

@@ -2,7 +2,7 @@
 
 The `Bayfront\BonesService\Rbac\Models\UserMetaModel` is used to manage user metadata.
 
-This model uses the [HasProtectedPrefix](../traits/hasprotectedprefix.md)trait.
+This model uses the [HasProtectedPrefix](../traits/hasprotectedprefix.md) trait.
 
 Due to the way the field is stored in the database, meta values will always be returned as a string.
 By JSON-encoding and decoding the value, other data types can be preserved.
