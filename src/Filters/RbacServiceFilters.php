@@ -6,6 +6,7 @@ use Bayfront\Bones\Abstracts\FilterSubscriber;
 use Bayfront\Bones\Application\Services\Filters\FilterSubscription;
 use Bayfront\Bones\Interfaces\FilterSubscriberInterface;
 use Bayfront\BonesService\Rbac\Migrations\CreateRbacServiceSchema;
+use Bayfront\BonesService\Rbac\Migrations\UpdateRbacServiceSchema_v1_1;
 use Bayfront\BonesService\Rbac\RbacService;
 
 class RbacServiceFilters extends FilterSubscriber implements FilterSubscriberInterface
@@ -31,7 +32,8 @@ class RbacServiceFilters extends FilterSubscriber implements FilterSubscriberInt
     public function createRbacServiceSchema(array $array): array
     {
         return array_merge($array, [
-            new CreateRbacServiceSchema($this->rbacService)
+            new CreateRbacServiceSchema($this->rbacService),
+            new UpdateRbacServiceSchema_v1_1($this->rbacService)
         ]);
     }
 

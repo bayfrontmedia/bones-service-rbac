@@ -154,9 +154,9 @@ php bones rbac:seed --force
 
 ## Table diagram
 
-[Diagram file](diagram/bones-service-rbac-v1.0.diagram)
+[Diagram file](diagram/bones-service-rbac-v1.1.diagram)
 
-![](diagram/bones-service-rbac-v1.0.png)
+![](diagram/bones-service-rbac-v1.1.png)
 
 ## Scheduled jobs
 
@@ -166,5 +166,5 @@ To keep the database optimized, the following scheduled jobs are recommended:
 - [Tenant invitations](models/tenantinvitations.md) and [user keys](models/userkeys.md) are both prunable by the `expires_at` field,
 and should be pruned regularly.
 - Delete any expired access and refresh tokens using [deleteExpiredTokens](models/usermeta.md#deleteexpiredtokens).
-- Delete any expired TOTP's using [deleteExpiredUserVerifications](models/usermeta.md#deleteexpireduserverifications), [deleteExpiredPasswordRequests](models/usermeta.md#deleteexpiredpasswordrequests) and [deleteExpiredUserTotps](models/usermeta.md#deleteexpiredusertotps).
+- Delete any expired user meta TOTP's.
 - Other soft-deleted resources may need to be permanently deleted using the [purgeTrashed](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md#purgetrashed) method as needed.
