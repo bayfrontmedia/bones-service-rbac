@@ -94,7 +94,7 @@ Returns TOTP with raw value.
 
 **Description:**
 
-Get non-deleted, valid, unexpired TOTP.
+Get valid, unexpired TOTP.
 Quietly deletes if invalid or expired.
 Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
 
@@ -115,7 +115,7 @@ Value can be verified using [hashMatches](../rbacservice.md#hashmatches).
 
 **Description:**
 
-Quietly hard-delete TOTP, if existing.
+Quietly delete TOTP, if existing.
 
 **Parameters:**
 
@@ -130,7 +130,7 @@ Quietly hard-delete TOTP, if existing.
 
 **Description:**
 
-Quietly hard-delete all expired TOTP's.
+Quietly delete all expired TOTP's.
 
 **Parameters:**
 

@@ -280,7 +280,7 @@ trait HasProtectedPrefix
     }
 
     /**
-     * Get non-deleted, valid, unexpired TOTP.
+     * Get valid, unexpired TOTP.
      * Quietly deletes if invalid or expired.
      * Value can be verified using RbacService->hashMatches().
      *
@@ -292,9 +292,7 @@ trait HasProtectedPrefix
     public function getTotp(string $user_id, string $meta_key): Totp
     {
 
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey AND $deleted_at_field IS NULL", [
+        $meta_value = $this->ormService->db->single("SELECT meta_value FROM $this->table_name WHERE user = :userId AND meta_key = :metaKey", [
             'userId' => $user_id,
             'metaKey' => $meta_key
         ]);
@@ -313,7 +311,7 @@ trait HasProtectedPrefix
     }
 
     /**
-     * Quietly hard-delete TOTP, if existing.
+     * Quietly delete TOTP, if existing.
      *
      * @param string $user_id
      * @param string $meta_key
@@ -328,7 +326,7 @@ trait HasProtectedPrefix
     }
 
     /**
-     * Quietly hard-delete all expired TOTP's.
+     * Quietly delete all expired TOTP's.
      *
      * @param string $meta_key
      * @return void
