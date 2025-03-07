@@ -8,7 +8,6 @@ use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\Prunable;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
@@ -17,7 +16,7 @@ use Bayfront\TimeHelpers\Time;
 class TenantInvitationsModel extends RbacModel
 {
 
-    use Prunable, SoftDeletes;
+    use Prunable;
 
     /**
      * The container will resolve any dependencies.
@@ -327,16 +326,6 @@ class TenantInvitationsModel extends RbacModel
         return 'expires_at';
     }
 
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
     /*
      * |--------------------------------------------------------------------------
      * | Model-specific
@@ -431,7 +420,7 @@ class TenantInvitationsModel extends RbacModel
 
         // Delete invitation
 
-        $this->hardDelete($invitation['id']);
+        $this->delete($invitation['id']);
 
         $this->ormService->events->doEvent('rbac.tenant.invitation.accepted', $user, $invitation['tenant']);
 
@@ -440,7 +429,7 @@ class TenantInvitationsModel extends RbacModel
     /**
      * Accept tenant invitation using invitation ID.
      *
-     * Adds non-deleted user to tenant with invited role and hard-deletes invitation.
+     * Adds non-deleted user to tenant with invited role and deletes invitation.
      * The rbac.tenant.invitation.accepted event is executed on success.
      *
      * @param string $invitation_id
@@ -454,9 +443,7 @@ class TenantInvitationsModel extends RbacModel
 
         // Get invitation
 
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $invitation = $this->ormService->db->row("SELECT id, email, tenant, role, expires_at FROM $this->table_name WHERE id = :id AND $deleted_at_field IS NULL", [
+        $invitation = $this->ormService->db->row("SELECT id, email, tenant, role, expires_at FROM $this->table_name WHERE id = :id", [
             'id' => $invitation_id
         ]);
 
@@ -471,7 +458,7 @@ class TenantInvitationsModel extends RbacModel
     /**
      * Accept tenant invitation using email and tenant ID.
      *
-     * Adds non-deleted user to tenant with invited role and hard-deletes invitation.
+     * Adds non-deleted user to tenant with invited role and deletes invitation.
      * The rbac.tenant.invitation.accepted event is executed on success.
      *
      * @param string $email
@@ -486,9 +473,7 @@ class TenantInvitationsModel extends RbacModel
 
         // Get invitation
 
-        $deleted_at_field = $this->getDeletedAtField();
-
-        $invitation = $this->ormService->db->row("SELECT id, email, tenant, role, expires_at FROM $this->table_name WHERE email = :email AND tenant = :tenant AND $deleted_at_field IS NULL", [
+        $invitation = $this->ormService->db->row("SELECT id, email, tenant, role, expires_at FROM $this->table_name WHERE email = :email AND tenant = :tenant", [
             'email' => $email,
             'tenant' => $tenant_id
         ]);

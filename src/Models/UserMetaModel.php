@@ -8,7 +8,6 @@ use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
@@ -20,7 +19,7 @@ use Bayfront\Validator\Rules\IsJson;
 class UserMetaModel extends RbacModel
 {
 
-    use HasProtectedPrefix, SoftDeletes;
+    use HasProtectedPrefix;
 
     /**
      * The container will resolve any dependencies.
@@ -331,16 +330,6 @@ class UserMetaModel extends RbacModel
      * |--------------------------------------------------------------------------
      */
 
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
     /*
      * |--------------------------------------------------------------------------
      * | Model-specific
@@ -349,8 +338,6 @@ class UserMetaModel extends RbacModel
 
     /**
      * Find user meta by user ID and meta key value.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
      *
      * @param string $user_id
      * @param string $meta_key
@@ -501,7 +488,7 @@ class UserMetaModel extends RbacModel
     }
 
     /**
-     * Quietly hard-delete token for user.
+     * Quietly delete token for user.
      *
      * @param string $user_id
      * @param string $type (TOKEN_TYPE_* constant)
@@ -533,7 +520,7 @@ class UserMetaModel extends RbacModel
     }
 
     /**
-     * Quietly hard-delete access and refresh tokens for user.
+     * Quietly delete access and refresh tokens for user.
      *
      * @param string $user_id
      * @return bool

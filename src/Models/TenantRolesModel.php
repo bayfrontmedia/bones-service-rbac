@@ -5,15 +5,12 @@ namespace Bayfront\BonesService\Rbac\Models;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
 
 class TenantRolesModel extends RbacModel
 {
-
-    use SoftDeletes;
 
     /**
      * The container will resolve any dependencies.
@@ -308,16 +305,6 @@ class TenantRolesModel extends RbacModel
      * |--------------------------------------------------------------------------
      */
 
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
     /*
      * |--------------------------------------------------------------------------
      * | Model-specific
@@ -326,8 +313,6 @@ class TenantRolesModel extends RbacModel
 
     /**
      * Find tenant role by tenant ID and name.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
      *
      * @param string $tenant_id
      * @param string $name

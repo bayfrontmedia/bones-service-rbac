@@ -2,8 +2,6 @@
 
 The `Bayfront\BonesService\Rbac\Models\PermissionsModel` is used to manage global permissions.
 
-This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
-
 Allowed fields write:
 
 - `name`: Required, string, max length 255
@@ -30,8 +28,6 @@ Model-specific methods include:
 **Description:**
 
 Find permission by name.
-
-Can be used with the `SoftDeletes` trait trashed filters.
 
 **Parameters:**
 

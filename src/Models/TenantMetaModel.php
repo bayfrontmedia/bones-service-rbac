@@ -6,7 +6,6 @@ use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\Traits\HasProtectedPrefix;
@@ -15,7 +14,7 @@ use Bayfront\SimplePdo\Query;
 class TenantMetaModel extends RbacModel
 {
 
-    use HasProtectedPrefix, SoftDeletes;
+    use HasProtectedPrefix;
 
     /**
      * The container will resolve any dependencies.
@@ -322,16 +321,6 @@ class TenantMetaModel extends RbacModel
      * |--------------------------------------------------------------------------
      */
 
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
     /*
      * |--------------------------------------------------------------------------
      * | Model-specific
@@ -340,8 +329,6 @@ class TenantMetaModel extends RbacModel
 
     /**
      * Find tenant meta by tenant ID and meta key value.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
      *
      * @param string $tenant_id
      * @param string $meta_key

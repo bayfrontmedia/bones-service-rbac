@@ -2,7 +2,7 @@
 
 The `Bayfront\BonesService\Rbac\Models\TenantUserMetaModel` is used to manage tenant user metadata.
 
-This model uses the [HasProtectedPrefix](../traits/hasprotectedprefix.md) and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
+This model uses the [HasProtectedPrefix](../traits/hasprotectedprefix.md) trait.
 
 Due to the way the field is stored in the database, meta values will always be returned as a string.
 By JSON-encoding and decoding the value, other data types can be preserved.
@@ -35,8 +35,6 @@ Model-specific methods include:
 **Description:**
 
 Find tenant user meta by tenant user ID and key value.
-
-Can be used with the `SoftDeletes` trait trashed filters.
 
 **Parameters:**
 

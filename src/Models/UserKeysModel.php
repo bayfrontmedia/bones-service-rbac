@@ -10,7 +10,6 @@ use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\Castable;
 use Bayfront\BonesService\Orm\Traits\HasOmittedFields;
 use Bayfront\BonesService\Orm\Traits\Prunable;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
@@ -20,7 +19,7 @@ use Bayfront\TimeHelpers\Time;
 class UserKeysModel extends RbacModel
 {
 
-    use Castable, HasOmittedFields, Prunable, SoftDeletes;
+    use Castable, HasOmittedFields, Prunable;
 
     /**
      * The container will resolve any dependencies.
@@ -394,16 +393,6 @@ class UserKeysModel extends RbacModel
         return 'expires_at';
     }
 
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
     /*
      * |--------------------------------------------------------------------------
      * | Model-specific
@@ -429,7 +418,6 @@ class UserKeysModel extends RbacModel
 
     /**
      * Does a user key exist with hashed key value?
-     * This includes soft-deleted keys to ensure keys are unique.
      *
      * @param string $hashed_key
      * @return bool
@@ -445,8 +433,6 @@ class UserKeysModel extends RbacModel
 
     /**
      * Find user key by key value.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
      *
      * @param string $key
      * @return OrmResource

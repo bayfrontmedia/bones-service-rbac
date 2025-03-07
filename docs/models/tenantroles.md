@@ -2,8 +2,6 @@
 
 The `Bayfront\BonesService\Rbac\Models\TenantRolesModel` is used to manage tenant roles.
 
-This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
-
 Allowed fields write:
 
 - `tenant`: ([Tenant ID](tenants.md)) Required, string
@@ -32,8 +30,6 @@ Model-specific methods include:
 **Description:**
 
 Find tenant role by tenant ID and name.
-
-Can be used with the `SoftDeletes` trait trashed filters.
 
 **Parameters:**
 
