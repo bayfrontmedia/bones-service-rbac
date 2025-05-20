@@ -353,7 +353,7 @@ trait HasProtectedPrefix
         }
 
         if (!empty($delete_ids)) {
-            $this->ormService->db->query("DELETE FROM $table WHERE id IN ('" . implode(',', $delete_ids) . "')");
+            $this->ormService->db->query("DELETE FROM $table WHERE id IN (" . implode(',', $delete_ids) . ")");
         }
 
     }
