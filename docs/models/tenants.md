@@ -2,7 +2,7 @@
 
 The `Bayfront\BonesService\Rbac\Models\TenantsModel` is used to manage tenants.
 
-This model uses the [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) trait.
+This model uses the [Castable](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/castable.md), [HasNullableJsonField](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/hasnullablejsonfield.md), and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
 
 Upon successful creation, the owner will be added to the tenant as a tenant user.
 If updating the tenant owner, the user must exist as a tenant user.

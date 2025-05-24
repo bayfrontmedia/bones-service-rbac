@@ -172,6 +172,7 @@ class UsersModel extends RbacModel
      * - Create UUID
      * - Create salt
      * - Hash password
+     * - Remove meta keys with null value
      *
      * @param array $fields
      * @return array
@@ -250,6 +251,7 @@ class UsersModel extends RbacModel
      * Filter fields before updating resource.
      *
      * - Hash password if exists
+     * - Merge meta if exists
      *
      * @param OrmResource $existing
      * @param array $fields (Fields to update)
@@ -274,7 +276,7 @@ class UsersModel extends RbacModel
         }
 
         if (isset($fields['meta']) && is_array($fields['meta'])) {
-            $fields['meta'] = $this->updateNullableJsonField($this->ormService, $this->table_name, $this->primary_key, $existing->getPrimaryKey(), $fields['meta']);
+            $fields['meta'] = $this->updateNullableJsonField($this->ormService, $this->table_name, $this->primary_key, $existing->getPrimaryKey(), $this->getNullableJsonField(), $fields['meta']);
         }
 
         return $fields;
@@ -403,6 +405,16 @@ class UsersModel extends RbacModel
      * | Traits
      * |--------------------------------------------------------------------------
      */
+
+    /**
+     * Trait: HasNullableJsonField
+     *
+     * @inheritDoc
+     */
+    public function getNullableJsonField(): string
+    {
+        return 'meta';
+    }
 
     /**
      * Trait: HasOmittedFields
