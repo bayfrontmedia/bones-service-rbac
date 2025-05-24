@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Bugfix when checking user and tenant meta validation rules on create and update
+- Bugfix in the query used in `deleteExpiredTotps` and `deleteExpiredTokens` methods
 
 ## [1.1.2] - 2025.05.20
 

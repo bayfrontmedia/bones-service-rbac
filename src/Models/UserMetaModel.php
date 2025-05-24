@@ -563,7 +563,7 @@ class UserMetaModel extends RbacModel
 
             if (!$validator->isValid()) {
 
-                $delete_ids[] = $token['id'];
+                $delete_ids[] = "'" . $token['id'] . "'";
                 continue;
 
             }
