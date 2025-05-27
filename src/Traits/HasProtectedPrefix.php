@@ -347,7 +347,7 @@ trait HasProtectedPrefix
             try {
                 $this->getTotpFromMetaValue($request['meta_value']);
             } catch (OrmServiceException) {
-                $delete_ids[] = $request['id'];
+                $delete_ids[] = "'" . $request['id'] . "'";
             }
 
         }
