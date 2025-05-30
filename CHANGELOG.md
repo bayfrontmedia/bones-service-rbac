@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
+## [1.2.0] - 2025.05.30
+
+### Added
+
+- Added `admin.all_permissions` config setting to define which tenant permissions are assigned to an admin user
+
 ## [1.1.3] - 2025.05.27
 
 ### Fixed
