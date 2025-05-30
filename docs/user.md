@@ -492,7 +492,7 @@ Is user in team?
 **Description:**
 
 Get all user permissions for tenant.
-Admins inherit all existing permissions.
+Admins inherit all existing or tenant permissions, depending on `admin.all_permissions` config setting.
 Tenant owners inherit all tenant permissions.
 If user or tenant is disabled, user will inherit no permissions.
 

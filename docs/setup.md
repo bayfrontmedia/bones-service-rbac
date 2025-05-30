@@ -20,6 +20,9 @@ return [
     'table_prefix' => 'rbac_', // RBAC database table prefix
     'protected_prefix' => '_app-', // Protected column prefix
     'invitation_duration' => 10080, // Max tenant invitation duration (in minutes), 0 for unlimited: 10080 = 7 days
+    'admin' => [
+        'all_permissions' => true, // Admin inherit all existing or tenant permissions? False to inherit all tenant permissions
+    ],
     'user' => [
         'require_verification' => true, // Require users to be verified to authenticate
         'key' => [
