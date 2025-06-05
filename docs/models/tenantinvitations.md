@@ -41,8 +41,6 @@ Model-specific methods include:
 
 Find tenant invitation by email and tenant ID.
 
-Can be used with the `SoftDeletes` trait trashed filters.
-
 **Parameters:**
 
 - `$email` (string)

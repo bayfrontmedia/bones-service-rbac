@@ -216,7 +216,7 @@ class TokenAuthenticator
 
         try {
             $user_resource = $this->usersModel->find($user_id);
-        } catch (DoesNotExistException) { // Token key exists, but user is soft-deleted
+        } catch (DoesNotExistException) {
             $this->userMetaModel->deleteAllTokens($user_id);
             throw new UserDoesNotExistException('Unable to authenticate token: User does not exist');
         } catch (UnexpectedException) {

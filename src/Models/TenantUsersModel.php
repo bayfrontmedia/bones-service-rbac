@@ -358,8 +358,6 @@ class TenantUsersModel extends RbacModel
     /**
      * Find tenant user by tenant and user ID.
      *
-     * Can be used with the SoftDeletes trait trashed filters.
-     *
      * @param string $tenant_id
      * @param string $user_id
      * @return OrmResource

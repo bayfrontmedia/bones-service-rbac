@@ -335,8 +335,6 @@ class TenantInvitationsModel extends RbacModel
     /**
      * Find tenant invitation by email and tenant ID.
      *
-     * Can be used with the SoftDeletes trait trashed filters.
-     *
      * @param string $email
      * @param string $tenant_id
      * @return OrmResource

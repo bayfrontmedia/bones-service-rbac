@@ -35,8 +35,6 @@ Model-specific methods include:
 
 Find tenant user by tenant and user ID.
 
-Can be used with the `SoftDeletes` trait trashed filters.
-
 **Parameters:**
 
 - `$tenant_id` (string)

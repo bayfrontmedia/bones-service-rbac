@@ -105,7 +105,7 @@ class UserKeyAuthenticator
 
         try {
             $user_resource = $usersModel->find(Arr::get($user_key, 'user', ''));
-        } catch (DoesNotExistException) { // User key exists, but user is soft-deleted
+        } catch (DoesNotExistException) {
             throw new UserDoesNotExistException('Unable to authenticate user: User does not exist');
         } catch (UnexpectedException) {
             throw new UnexpectedAuthenticationException('Unable to authenticate user: Unable to find user');

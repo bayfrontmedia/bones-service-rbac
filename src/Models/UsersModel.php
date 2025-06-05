@@ -11,7 +11,6 @@ use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\Castable;
 use Bayfront\BonesService\Orm\Traits\HasNullableJsonField;
 use Bayfront\BonesService\Orm\Traits\HasOmittedFields;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
@@ -21,7 +20,7 @@ use Exception;
 class UsersModel extends RbacModel
 {
 
-    use Castable, HasNullableJsonField, HasOmittedFields, SoftDeletes;
+    use Castable, HasNullableJsonField, HasOmittedFields;
 
     /**
      * The container will resolve any dependencies.
@@ -429,16 +428,6 @@ class UsersModel extends RbacModel
         ];
     }
 
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
     /*
      * |--------------------------------------------------------------------------
      * | Model-specific
@@ -447,8 +436,6 @@ class UsersModel extends RbacModel
 
     /**
      * Find user by email.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
      *
      * @param string $email
      * @return OrmResource
@@ -513,7 +500,7 @@ class UsersModel extends RbacModel
     }
 
     /**
-     * Soft-delete all unverified users created and never updated,
+     * Delete all unverified users created and never updated,
      * or last updated before timestamp.
      *
      * @param int $timestamp
@@ -530,7 +517,7 @@ class UsersModel extends RbacModel
         $table = $this->getTableName();
         $datetime = date('Y-m-d H:i:s', $timestamp);
 
-        $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND (updated_at IS NULL OR updated_at < :datetime) AND verified_at IS NULL AND deleted_at IS NULL", [
+        $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND (updated_at IS NULL OR updated_at < :datetime) AND verified_at IS NULL", [
             'datetime' => $datetime
         ]);
 

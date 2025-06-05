@@ -157,9 +157,9 @@ php bones rbac:seed --force
 
 ## Table diagram
 
-[Diagram file](diagram/bones-service-rbac-v1.1.diagram)
+[Diagram file](diagram/bones-service-rbac-v1.3.diagram)
 
-![](diagram/bones-service-rbac-v1.1.png)
+![](diagram/bones-service-rbac-v1.3.png)
 
 ## Scheduled jobs
 
