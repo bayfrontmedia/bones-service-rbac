@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  allowing more than one simultaneous session per user
 - Added `$new_users_only` parameter to `deleteUnverified` method
 - Added `UserIdAuthenticator`
+- Added the `rbac.tenant.owner.updated` event
 
 ### Changed
 

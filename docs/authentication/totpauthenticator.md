@@ -9,8 +9,6 @@ email address and a time-based one-time password (TOTP).
 
 Authenticate with [user TOTP](../totp.md), quietly deleting if expired or when authenticated.
 
-The `rbac.auth.success` [event](../events.md) is executed on success, and `rbac.auth.fail.totp` on failure.
-
 **Parameters:**
 
 - `$email` (string)

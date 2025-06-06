@@ -10,11 +10,6 @@ NOTE: Authentication is not secure with this method alone.
 
 Authenticate with [user id](../models/users.md).
 
-The `rbac.auth.fail.id` [event](../events.md) is executed on failure.
-
-NOTE: Because authentication is not secure with this method alone,
-the `rbac.auth.success` [event](../events.md) is never executed.
-
 **Parameters:**
 
 - `$user_id` (mixed)

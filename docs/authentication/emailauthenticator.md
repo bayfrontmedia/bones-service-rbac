@@ -12,11 +12,6 @@ To be secure, this authentication method should be used in conjunction with anot
 
 Authenticate with [email](../models/users.md).
 
-The `rbac.auth.fail.email` [event](../events.md) is executed on failure.
-
-NOTE: Because authentication is not secure with this method alone, 
-the `rbac.auth.success` [event](../events.md) is never executed.
-
 **Parameters:**
 
 - `$email` (string)

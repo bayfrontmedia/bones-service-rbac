@@ -283,6 +283,8 @@ class TenantsModel extends RbacModel
                 throw new InvalidFieldException('Unable to update tenant: Owner must exist as a tenant user');
             }
 
+            $this->ormService->events->doEvent('rbac.tenant.owner.updated', $existing->getPrimaryKey(), $existing->get('owner'), $fields['owner']);
+
         }
 
         if (isset($fields['meta']) && is_array($fields['meta'])) {

@@ -9,8 +9,6 @@ email address and password.
 
 Authenticate with [email and password](../models/users.md).
 
-The `rbac.auth.success` [event](../events.md) is executed on success, and `rbac.auth.fail.password` on failure.
-
 **Parameters:**
 
 - `$email` (string)

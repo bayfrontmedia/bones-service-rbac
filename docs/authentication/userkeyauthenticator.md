@@ -9,8 +9,6 @@ API key.
 
 Authenticate with [user key](../models/userkeys.md).
 
-The `rbac.auth.success` [event](../events.md) is executed on success, and `rbac.auth.fail.key` on failure.
-
 **Parameters:**
 
 - `$user_key` (string): Token value
