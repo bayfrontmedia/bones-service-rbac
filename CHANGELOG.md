@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
-## [1.3.0] - 2025.06.05
+## [1.3.0] - 2025.06.06
 
 ### Added
 
@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added ability for user to authenticate with multiple access and refresh tokens,
  allowing more than one simultaneous session per user
 - Added `$new_users_only` parameter to `deleteUnverified` method
+- Added `UserIdAuthenticator`
 
 ### Changed
 
