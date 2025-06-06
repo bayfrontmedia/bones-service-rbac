@@ -12,26 +12,25 @@ use Bayfront\BonesService\Rbac\Exceptions\Authentication\UnexpectedAuthenticatio
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDisabledException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserDoesNotExistException;
 use Bayfront\BonesService\Rbac\Exceptions\Authentication\UserNotVerifiedException;
-use Bayfront\BonesService\Rbac\Models\UserMetaModel;
 use Bayfront\BonesService\Rbac\Models\UsersModel;
+use Bayfront\BonesService\Rbac\Models\UserTokensModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\User;
 use Bayfront\JWT\Jwt;
 use Bayfront\JWT\TokenException;
-use Bayfront\Validator\Rules\IsJson;
 
 class TokenAuthenticator
 {
 
     public RbacService $rbacService;
-    private UserMetaModel $userMetaModel;
+    private UserTokensModel $userTokensModel;
     private UsersModel $usersModel;
     private Jwt $jwt;
 
     public function __construct(RbacService $rbacService)
     {
         $this->rbacService = $rbacService;
-        $this->userMetaModel = new UserMetaModel($rbacService);
+        $this->userTokensModel = new UserTokensModel($rbacService);
         $this->usersModel = new UsersModel($rbacService);
         $this->jwt = new Jwt(App::getConfig('app.key'));
     }
@@ -100,7 +99,7 @@ class TokenAuthenticator
 
         } catch (TokenException) { // Token expired
 
-            $this->userMetaModel->deleteToken($user_id, $type);
+            $this->userTokensModel->deleteToken($user_id, $type);
 
             throw new TokenDoesNotExistException('Unable to authenticate token: Invalid claims');
 
@@ -111,7 +110,7 @@ class TokenAuthenticator
          * App configuration may have changed since the JWT was created
          */
 
-        if ($type == self::TOKEN_TYPE_REFRESH) {
+        if ($type == $this->userTokensModel::TOKEN_TYPE_REFRESH) {
             $exp = Arr::get($decoded, 'payload.iat', 0) + ($this->rbacService->getConfig('user.token.refresh_duration', 10080) * 60);
         } else {
             $exp = Arr::get($decoded, 'payload.iat', 0) + ($this->rbacService->getConfig('user.token.access_duration', 5) * 60);
@@ -119,7 +118,7 @@ class TokenAuthenticator
 
         if ($exp < time()) {
 
-            $this->userMetaModel->deleteToken($user_id, $type);
+            $this->userTokensModel->deleteToken($user_id, $type);
 
             throw new TokenDoesNotExistException('Unable to authenticate token: Token was expired');
 
@@ -130,23 +129,17 @@ class TokenAuthenticator
          * If the token was expired, it may have been removed from the database.
          */
 
-        if ($type == self::TOKEN_TYPE_REFRESH
+        if ($type == $this->userTokensModel::TOKEN_TYPE_REFRESH
             || $this->rbacService->getConfig('user.token.revocable') === true) { // jti should be defined
 
             try {
-
-                if ($type == self::TOKEN_TYPE_ACCESS) {
-                    $meta_key = 'access_token';
-                } else {
-                    $meta_key = 'refresh_token';
-                }
 
                 /*
                  * Validate:
                  * - jti (user meta ID)
                  */
 
-                $meta = $this->userMetaModel->withProtectedPrefix()->find(Arr::get($decoded, 'payload.jti', ''));
+                $resource = $this->userTokensModel->find(Arr::get($decoded, 'payload.jti', ''));
 
             } catch (DoesNotExistException) {
                 throw new TokenDoesNotExistException('Unable to authenticate token: Token does not exist for user');
@@ -156,39 +149,25 @@ class TokenAuthenticator
 
             /*
              * Validate:
-             * - Correct user meta has been retrieved
+             * - Correct user token has been retrieved
              * - sub (user ID)
              */
 
-            if ($meta->get('meta_key') !== $this->userMetaModel->getProtectedPrefix() . $meta_key
-                || $meta->get('user') !== Arr::get($decoded, 'payload.sub', '')) { // Default one to string so both non-existing do not match
+            if ($resource->get('type') !== $type
+                || $resource->get('user') !== Arr::get($decoded, 'payload.sub', '')) { // Default one to string so both non-existing do not match
 
                 throw new UnexpectedAuthenticationException('Unable to authenticate token: Invalid key or jti');
 
             }
-
-            $meta_value = $meta->get('meta_value');
-
-            $validator = new IsJson($meta_value);
-
-            if (!$validator->isValid()) {
-
-                $this->userMetaModel->deleteToken($user_id, $type);
-
-                throw new UnexpectedAuthenticationException('Unable to authenticate token: Invalid token format');
-
-            }
-
-            $meta_value = json_decode($meta_value, true);
 
             /*
              * Validate:
              * - exp
              */
 
-            if (Arr::get($meta_value, 'exp') != Arr::get($decoded, 'payload.exp', '')) { // Default one to string so both non-existing do not match
+            if ($resource->get('expires') != Arr::get($decoded, 'payload.exp', '')) { // Default one to string so both non-existing do not match
 
-                $this->userMetaModel->deleteToken($user_id, $type);
+                $this->userTokensModel->deleteToken($user_id, $type);
 
                 throw new TokenDoesNotExistException('Unable to authenticate token: Invalid token expiration');
 
@@ -217,7 +196,7 @@ class TokenAuthenticator
         try {
             $user_resource = $this->usersModel->find($user_id);
         } catch (DoesNotExistException) {
-            $this->userMetaModel->deleteAllTokens($user_id);
+            $this->userTokensModel->deleteAllTokens($user_id);
             throw new UserDoesNotExistException('Unable to authenticate token: User does not exist');
         } catch (UnexpectedException) {
             throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to find user');
@@ -228,7 +207,7 @@ class TokenAuthenticator
         // User is enabled
 
         if (!$user->isEnabled()) {
-            $this->userMetaModel->deleteAllTokens($user_id);
+            $this->userTokensModel->deleteAllTokens($user_id);
             throw new UserDisabledException('Unable to authenticate token: User is disabled');
         }
 
@@ -237,7 +216,7 @@ class TokenAuthenticator
         if ($this->rbacService->getConfig('user.require_verification', true) === true
             && $user->get('verified_at') === null) {
 
-            $this->userMetaModel->deleteAllTokens($user_id);
+            $this->userTokensModel->deleteAllTokens($user_id);
             throw new UserNotVerifiedException('Unable to authenticate token: User is not verified');
 
         }

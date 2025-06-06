@@ -21,3 +21,4 @@ All models use a UUIDv7 as the primary key.
 - [UserKeysModel](userkeys.md)
 - [UserMetaModel](usermeta.md)
 - [UsersModel](users.md)
+- [UserTokensModel](usertokens.md)

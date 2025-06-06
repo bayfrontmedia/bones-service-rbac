@@ -105,6 +105,11 @@ return [
             'max_limit' => -1,
             'max_related_depth' => 3,
         ],
+        'user_tokens' => [
+            'default_limit' => 100,
+            'max_limit' => -1,
+            'max_related_depth' => 3,
+        ],
         'users' => [
             'default_limit' => 100,
             'max_limit' => -1,
@@ -168,6 +173,6 @@ To keep the database optimized, the following scheduled jobs are recommended:
 - If user verification is required, delete unverified users using [deleteUnverified](models/users.md#deleteunverified).
 - [Tenant invitations](models/tenantinvitations.md) and [user keys](models/userkeys.md) are both prunable by the `expires_at` field,
 and should be pruned regularly.
-- Delete any expired access and refresh tokens using [deleteExpiredTokens](models/usermeta.md#deleteexpiredtokens).
+- Delete any expired access and refresh tokens using [deleteExpiredTokens](models/usertokens.md#deleteexpiredtokens).
 - Delete any expired user meta TOTP's.
 - Other soft-deleted resources may need to be permanently deleted using the [purgeTrashed](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md#purgetrashed) method as needed.

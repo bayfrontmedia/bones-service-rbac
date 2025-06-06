@@ -15,8 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.0] - 2025.06.05
 
+### Added
+
+- Added `UserTokensModel` and related database migration
+- Added ability for user to authenticate with multiple access and refresh tokens,
+ allowing more than one simultaneous session per user
+
 ### Changed
 
+- Removed token-specific methods from `UserMetaModel` to `UserTokensModel`
 - Updated documentation
 
 ### Removed
