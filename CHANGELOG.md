@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `UserTokensModel` and related database migration
 - Added ability for user to authenticate with multiple access and refresh tokens,
  allowing more than one simultaneous session per user
+- Added `$new_users_only` parameter to `deleteUnverified` method
 
 ### Changed
 

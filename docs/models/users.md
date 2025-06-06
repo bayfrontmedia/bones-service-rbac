@@ -104,12 +104,15 @@ Update `verified_at` field to `null.
 
 **Description:**
 
-Delete all unverified users created and never updated,
-or last updated before timestamp.
+Delete all unverified users created and never updated.
+
+NOTE: When $new_users_only is false, existing users who update their email address but have not yet
+verified it will be removed.
 
 **Parameters:**
 
 - `$timestamp` (int)
+- `$new_users_only = true` (bool): When `false`, users last updated before the timestamp will also be removed
 
 **Returns:**
 

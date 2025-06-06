@@ -500,14 +500,18 @@ class UsersModel extends RbacModel
     }
 
     /**
-     * Delete all unverified users created and never updated,
-     * or last updated before timestamp.
+     * Delete all unverified users created and never updated.
+     *
+     * NOTE:
+     * When $new_users_only is false, existing users who update their email address but have not yet
+     * verified it will be removed.
      *
      * @param int $timestamp
+     * @param bool $new_users_only (When false, users last updated before the timestamp will also be removed)
      * @return void
      * @throws UnexpectedException
      */
-    public function deleteUnverified(int $timestamp): void
+    public function deleteUnverified(int $timestamp, bool $new_users_only = true): void
     {
 
         if ($this->rbacService->getConfig('user.require_verification', true) === false) {
@@ -517,9 +521,19 @@ class UsersModel extends RbacModel
         $table = $this->getTableName();
         $datetime = date('Y-m-d H:i:s', $timestamp);
 
-        $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND (updated_at IS NULL OR updated_at < :datetime) AND verified_at IS NULL", [
-            'datetime' => $datetime
-        ]);
+        if ($new_users_only === true) {
+
+            $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND updated_at IS NULL AND verified_at IS NULL", [
+                'datetime' => $datetime
+            ]);
+
+        } else {
+
+            $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND (updated_at IS NULL OR updated_at < :datetime) AND verified_at IS NULL", [
+                'datetime' => $datetime
+            ]);
+
+        }
 
         foreach ($unverified as $uv) {
             $this->delete($uv['id']);
