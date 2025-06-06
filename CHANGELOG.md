@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed `SoftDeletes` trait from the following resource models:
   - `TenantsModel`
   - `UsersModel`
+- Removed `admin.all_permissions` config key in favor of admins inheriting all existing permissions with the option
+  of impersonating users.
 
 ## [1.2.0] - 2025.05.30
 

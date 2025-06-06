@@ -667,7 +667,7 @@ class User
             return;
         }
 
-        if ($this->isAdmin() && $this->rbacService->getConfig('admin.all_permissions', false) === true) {
+        if ($this->isAdmin()) {
 
             $permissionsModel = new PermissionsModel($this->rbacService);
 
@@ -679,7 +679,7 @@ class User
 
             $this->permissions[$tenant_id] = $permissions->list();
 
-        } else if ($this->isAdmin() || $this->ownsTenant($tenant_id)) {
+        } else if ($this->ownsTenant($tenant_id)) {
 
             $tenantPermissionsModel = new TenantPermissionsModel($this->rbacService);
 
@@ -723,7 +723,7 @@ class User
 
     /**
      * Get all user permissions for tenant.
-     * Admins inherit all existing or tenant permissions, depending on admin.all_permissions config setting.
+     * Admins inherit all existing permissions.
      * Tenant owners inherit all tenant permissions.
      * If user or tenant is disabled, user will inherit no permissions.
      *
