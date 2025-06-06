@@ -4,23 +4,23 @@ namespace Bayfront\BonesService\Rbac\Models;
 
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Application\Utilities\App;
-use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidRequestException;
+use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\Castable;
 use Bayfront\BonesService\Orm\Traits\HasNullableJsonField;
-use Bayfront\BonesService\Orm\Traits\HasOmittedFields;
+use Bayfront\BonesService\Orm\Utilities\Parsers\QueryParser;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
+use Bayfront\JWT\Jwt;
+use Bayfront\JWT\TokenException;
 use Bayfront\SimplePdo\Query;
-use Bayfront\TimeHelpers\Time;
-use Exception;
 
-class UsersModel extends RbacModel
+class UserTokensModel extends RbacModel
 {
 
-    use Castable, HasNullableJsonField, HasOmittedFields;
+    use Castable, HasNullableJsonField;
 
     /**
      * The container will resolve any dependencies.
@@ -31,7 +31,7 @@ class UsersModel extends RbacModel
 
     public function __construct(RbacService $rbacService)
     {
-        parent::__construct($rbacService, $rbacService::TABLE_USERS);
+        parent::__construct($rbacService, $rbacService::TABLE_USER_TOKENS);
     }
 
     /**
@@ -65,7 +65,9 @@ class UsersModel extends RbacModel
      *
      * @var array
      */
-    protected array $related_fields = [];
+    protected array $related_fields = [
+        'user' => UsersModel::class
+    ];
 
     /**
      * Fields which are required when creating resource.
@@ -73,8 +75,9 @@ class UsersModel extends RbacModel
      * @var array
      */
     protected array $required_fields = [
-        'email',
-        'password'
+        'user',
+        'type',
+        'expires'
     ];
 
     /**
@@ -86,11 +89,11 @@ class UsersModel extends RbacModel
      * @var array
      */
     protected array $allowed_fields_write = [
-        'email' => 'email|maxLength:255',
-        'password' => 'isString|maxLength:255',
-        'meta' => 'isArray',
-        'admin' => 'isBoolean',
-        'enabled' => 'isBoolean'
+        'user' => 'isString|lengthEquals:36',
+        'type' => 'isString|maxLength:255',
+        'expires' => 'isInteger',
+        'ip' => 'isString|maxLength:255',
+        'meta' => 'isArray'
     ];
 
     /**
@@ -101,9 +104,7 @@ class UsersModel extends RbacModel
      *
      * @var array
      */
-    protected array $unique_fields = [
-        'email'
-    ];
+    protected array $unique_fields = [];
 
     /**
      * Fields which can be read from the resource.
@@ -112,13 +113,12 @@ class UsersModel extends RbacModel
      */
     protected array $allowed_fields_read = [
         'id',
-        'email',
+        'user',
+        'type',
+        'expires',
+        'ip',
         'meta',
-        'admin',
-        'enabled',
-        'created_at',
-        'updated_at',
-        'verified_at'
+        'created_at'
     ];
 
     /**
@@ -131,7 +131,9 @@ class UsersModel extends RbacModel
      */
     protected array $search_fields = [
         'id',
-        'email',
+        'user',
+        'type',
+        'ip',
         'meta'
     ];
 
@@ -169,27 +171,13 @@ class UsersModel extends RbacModel
      * Filter fields before creating resource.
      *
      * - Create UUID
-     * - Create salt
-     * - Hash password
-     * - Remove meta keys with null value
      *
      * @param array $fields
      * @return array
-     * @throws UnexpectedException
      */
     protected function onCreating(array $fields): array
     {
         $fields['id'] = $this->createUuid();
-
-        // $fields['password'] already required and validated
-
-        try {
-            $fields['salt'] = App::createKey();
-        } catch (Exception) {
-            throw new UnexpectedException('Unable to create user: Error creating salt');
-        }
-
-        $fields['password'] = App::createPasswordHash($this->ormService->filters->doFilter('rbac.user.password', Arr::get($fields, 'password', '')), $fields['salt']);
 
         if (isset($fields['meta']) && is_array($fields['meta'])) {
             $fields['meta'] = $this->defineNullableJsonField($fields['meta']);
@@ -206,11 +194,13 @@ class UsersModel extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-        $this->ormService->events->doEvent('rbac.user.created', $resource);
+
     }
 
     /**
      * Filter query before reading resource(s).
+     *
+     * - Filter protected meta prefix
      *
      * @param Query $query
      * @return Query
@@ -223,18 +213,15 @@ class UsersModel extends RbacModel
     /**
      * Filter fields after a resource is read.
      *
-     * - Transform fields
-     *
      * @param array $fields
      * @return array
      * @throws UnexpectedException
      */
     protected function onRead(array $fields): array
     {
+
         $fields = $this->transform($fields, [
-            'meta' => [$this, 'jsonDecode'],
-            'admin' => [$this, 'boolean'],
-            'enabled' => [$this, 'boolean']
+            'meta' => [$this, 'jsonDecode']
         ]);
 
         if (isset($fields['meta'])) {
@@ -249,30 +236,12 @@ class UsersModel extends RbacModel
     /**
      * Filter fields before updating resource.
      *
-     * - Hash password if exists
-     * - Merge meta if exists
-     *
      * @param OrmResource $existing
      * @param array $fields (Fields to update)
      * @return array
-     * @throws DoesNotExistException
      */
     protected function onUpdating(OrmResource $existing, array $fields): array
     {
-
-        if (isset($fields['password'])) {
-
-            $salt = $this->ormService->db->single("SELECT salt FROM $this->table_name WHERE $this->primary_key = :id", [
-                'id' => $existing->getPrimaryKey()
-            ]);
-
-            if (!$salt) { // This should never happen
-                throw new DoesNotExistException('Unable to update user: User salt does not exist');
-            }
-
-            $fields['password'] = App::createPasswordHash($this->ormService->filters->doFilter('rbac.user.password', $fields['password']), $salt);
-
-        }
 
         if (isset($fields['meta']) && is_array($fields['meta'])) {
             $fields['meta'] = $this->updateNullableJsonField($this->ormService, $this->table_name, $this->primary_key, $existing->getPrimaryKey(), $this->getNullableJsonField(), $fields['meta']);
@@ -293,21 +262,12 @@ class UsersModel extends RbacModel
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
 
-        $this->ormService->events->doEvent('rbac.user.updated', $resource, $previous, $fields);
-
-        if (isset($fields['email'])) {
-            $this->ormService->events->doEvent('rbac.user.email.updated', $resource);
-        }
-
-        if (isset($fields['password'])) {
-            $this->ormService->events->doEvent('rbac.user.password.updated', $resource);
-        }
     }
 
     /**
      * Filter fields before writing to resource (creating and updating).
      *
-     * - Transform fields
+     * - Filter protected meta prefix
      *
      * @param array $fields
      * @return array
@@ -316,9 +276,7 @@ class UsersModel extends RbacModel
     protected function onWriting(array $fields): array
     {
         return $this->transform($fields, [
-            'meta' => [$this, 'jsonEncode'],
-            'admin' => [$this, 'integer'],
-            'enabled' => [$this, 'integer'],
+            'meta' => [$this, 'jsonEncode']
         ]);
     }
 
@@ -336,29 +294,13 @@ class UsersModel extends RbacModel
     /**
      * Actions to perform before a resource is deleted.
      *
-     * - Ensure user does not own tenant
+     * - Filter protected meta prefix
      *
      * @param OrmResource $resource
      * @return void
-     * @throws InvalidRequestException
-     * @throws UnexpectedException
      */
     protected function onDeleting(OrmResource $resource): void
     {
-
-        try {
-            $tenantsModel = new TenantsModel($this->rbacService);
-        } catch (Exception) {
-            throw new UnexpectedException('Unable to delete user: Error validating tenants');
-        }
-
-        $owned = $this->ormService->db->count($tenantsModel->getTableName(), [
-            'owner' => $resource->getPrimaryKey()
-        ]);
-
-        if ($owned > 0) {
-            throw new InvalidRequestException('Unable to delete user: Tenant owners cannot be deleted');
-        }
 
     }
 
@@ -370,7 +312,7 @@ class UsersModel extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-        $this->ormService->events->doEvent('rbac.user.deleted', $resource);
+
     }
 
     /**
@@ -390,6 +332,8 @@ class UsersModel extends RbacModel
      * Called after any actionable ResourceModel function is executed.
      * Functions executed inside another are ignored.
      * The name of the function is passed as a parameter.
+     *
+     * - Reset protected meta prefix filters
      *
      * @param string $function (Function which completed)
      * @return void
@@ -415,19 +359,6 @@ class UsersModel extends RbacModel
         return 'meta';
     }
 
-    /**
-     * Trait: HasOmittedFields
-     *
-     * @inheritDoc
-     */
-    public function getOmittedFields(): array
-    {
-        return [
-            'password',
-            'salt'
-        ];
-    }
-
     /*
      * |--------------------------------------------------------------------------
      * | Model-specific
@@ -435,109 +366,228 @@ class UsersModel extends RbacModel
      */
 
     /**
-     * Find user by email.
+     * Find user token by user ID and type.
      *
-     * @param string $email
-     * @return OrmResource
-     * @throws DoesNotExistException
+     * @param string $user_id
+     * @param string $type
+     * @return array
+     * @throws InvalidRequestException
      * @throws UnexpectedException
      */
-    public function findByEmail(string $email): OrmResource
+    public function readByType(string $user_id, string $type): array
     {
 
-        $user = $this->ormService->db->single("SELECT id FROM $this->table_name WHERE email = :email", [
-            'email' => $email
+        $query = $this->list(new QueryParser([
+            'fields' => '*',
+            'filter' => [
+                [
+                    'user' => [
+                        'eq' => $user_id
+                    ]
+                ],
+                [
+                    'type' => [
+                        'eq' => $type
+                    ]
+                ]
+            ]
+        ]));
+
+        return $query->list();
+
+    }
+
+    // ------------------------- Tokens -------------------------
+
+    public const TOKEN_TYPE_ACCESS = 'access';
+    public const TOKEN_TYPE_REFRESH = 'refresh';
+
+    /**
+     * Create JWT.
+     *
+     * @param string $user_id
+     * @param string $type
+     * @param int $now
+     * @param int $exp
+     * @param string $jti
+     * @return string
+     */
+    private function createJwt(string $user_id, string $type, int $now, int $exp, string $jti = ''): string
+    {
+
+        $jwt = new Jwt(App::getConfig('app.key'));
+
+        $payload = array_merge($this->ormService->filters->doFilter('rbac.token.payload', []), [
+            'type' => $type
         ]);
 
-        if (!$user) {
-            throw new DoesNotExistException('Unable to find user: User does not exist');
+        if ($jti !== '') {
+            $jwt->jti($jti);
         }
 
-        return $this->find($user);
+        $jwt->sub($user_id)
+            ->iat($now)
+            ->nbf($now)
+            ->exp($exp);
 
-    }
-
-    // ------------------------Verification -------------------------
-
-    /**
-     * Update verified_at field to null.
-     *
-     * @param string $email
-     * @return bool
-     */
-    public function unverify(string $email): bool
-    {
-
-        return $this->ormService->db->update($this->table_name, [
-            'verified_at' => null
-        ], [
-            'email' => $email
-        ]);
+        return $jwt->encode($payload);
 
     }
 
     /**
-     * Update verified_at field to current datetime.
+     * Create token for user.
      *
-     * @param string $email
-     * @return bool
-     */
-    public function verify(string $email): bool
-    {
-
-        $updated = $this->ormService->db->update($this->table_name, [
-            'verified_at' => Time::getDateTime()
-        ], [
-            'email' => $email
-        ]);
-
-        if ($updated === true) {
-            $this->ormService->events->doEvent('rbac.user.verified', $email);
-        }
-
-        return $updated;
-
-    }
-
-    /**
-     * Delete all unverified users created and never updated.
-     *
-     * NOTE:
-     * When $new_users_only is false, existing users who update their email address but have not yet
-     * verified it will be removed.
-     *
-     * @param int $timestamp
-     * @param bool $new_users_only (When false, users last updated before the timestamp will also be removed)
-     * @return void
+     * @param string $user_id
+     * @param string $type (TOKEN_TYPE_* constant)
+     * @param string|null $ip (IP address which made the request)
+     * @param array|null $meta (Metadata)
+     * @return string
      * @throws UnexpectedException
      */
-    public function deleteUnverified(int $timestamp, bool $new_users_only = true): void
+    public function createToken(string $user_id, string $type, ?string $ip = null, ?array $meta = []): string
     {
 
-        if ($this->rbacService->getConfig('user.require_verification', true) === false) {
-            return;
-        }
+        $now = time();
 
-        $table = $this->getTableName();
-        $datetime = date('Y-m-d H:i:s', $timestamp);
+        if ($type == self::TOKEN_TYPE_ACCESS) {
 
-        if ($new_users_only === true) {
+            $exp = $now + ($this->rbacService->getConfig('user.token.access_duration', 5) * 60);
 
-            $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND updated_at IS NULL AND verified_at IS NULL", [
-                'datetime' => $datetime
-            ]);
+            $jti = '';
+
+            if ($this->rbacService->getConfig('user.token.revocable') === true) {
+
+                try {
+
+                    $token = $this->create([
+                        'user' => $user_id,
+                        'type' => $type,
+                        'expires' => $exp,
+                        'ip' => $ip,
+                        'meta' => $meta
+                    ]);
+
+                } catch (OrmServiceException $e) {
+                    throw new UnexpectedException('Unable to create access token: ' . $e->getMessage());
+                }
+
+                $jti = $token->getPrimaryKey();
+
+            }
+
+            return $this->createJwt($user_id, self::TOKEN_TYPE_ACCESS, $now, $exp, $jti);
+
+        } else if ($type == self::TOKEN_TYPE_REFRESH) {
+
+            $exp = $now + ($this->rbacService->getConfig('user.token.refresh_duration', 10080) * 60);
+
+            try {
+
+                $token = $this->create([
+                    'user' => $user_id,
+                    'type' => $type,
+                    'expires' => $exp,
+                    'ip' => $ip,
+                    'meta' => $meta
+                ]);
+
+            } catch (OrmServiceException $e) {
+                throw new UnexpectedException('Unable to create refresh token: ' . $e->getMessage());
+            }
+
+            return $this->createJwt($user_id, self::TOKEN_TYPE_REFRESH, $now, $exp, $token->getPrimaryKey());
 
         } else {
+            throw new UnexpectedException('Unable to create token: Invalid type');
+        }
 
-            $unverified = $this->ormService->db->select("SELECT id FROM $table WHERE created_at < :datetime AND (updated_at IS NULL OR updated_at < :datetime) AND verified_at IS NULL", [
-                'datetime' => $datetime
+    }
+
+    /**
+     * Read token payload.
+     *
+     * NOTE: This does not perform any validation.
+     *
+     * @param string $token
+     * @return array
+     * @throws UnexpectedException
+     */
+    public function readToken(string $token): array
+    {
+        $jwt = new Jwt(App::getConfig('app.key'));
+
+        try {
+            $arr = $jwt->decode($token, false);
+        } catch (TokenException) {
+            throw new UnexpectedException('Unable to read token payload: Unexpected error');
+        }
+
+        return Arr::get($arr, 'payload', []);
+    }
+
+    /**
+     * Quietly delete token for user.
+     *
+     * @param string $user_id
+     * @param string $type (TOKEN_TYPE_* constant)
+     * @return bool
+     */
+    public function deleteToken(string $user_id, string $type): bool
+    {
+
+        $table = $this->getTableName();
+
+        if ($type == self::TOKEN_TYPE_ACCESS) {
+
+            return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND type = :accessToken", [
+                'user' => $user_id,
+                'accessToken' => self::TOKEN_TYPE_ACCESS
+            ]);
+
+        } else if ($type == self::TOKEN_TYPE_REFRESH) {
+
+            return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND type = :refreshToken", [
+                'user' => $user_id,
+                'refreshToken' => self::TOKEN_TYPE_REFRESH
             ]);
 
         }
 
-        foreach ($unverified as $uv) {
-            $this->delete($uv['id']);
-        }
+        return false;
+
+    }
+
+    /**
+     * Quietly delete all tokens for user.
+     *
+     * @param string $user_id
+     * @return bool
+     */
+    public function deleteAllTokens(string $user_id): bool
+    {
+
+        $table = $this->getTableName();
+
+        return $this->ormService->db->query("DELETE FROM $table WHERE user = :user", [
+            'user' => $user_id
+        ]);
+
+    }
+
+    /**
+     * Quietly delete all expired tokens.
+     *
+     * @return void
+     */
+    public function deleteExpiredTokens(): void
+    {
+
+        $table = $this->getTableName();
+
+        $this->ormService->db->query("DELETE FROM $table WHERE expires < :now", [
+            'now' => time()
+        ]);
+
 
     }
 

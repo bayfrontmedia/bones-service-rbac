@@ -2,7 +2,7 @@
 
 The `Bayfront\BonesService\Rbac\Models\UsersModel` is used to manage users.
 
-This model uses the [Castable](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/castable.md), [HasNullableJsonField](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/hasnullablejsonfield.md), [HasOmittedFields](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/hasomittedfields.md) and [SoftDeletes](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md) traits.
+This model uses the [Castable](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/castable.md), [HasNullableJsonField](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/hasnullablejsonfield.md) and [HasOmittedFields](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/hasomittedfields.md) traits.
 
 On creation, a unique salt is created for the user, and the password is hashed using the salt.
 The password can be filtered (for example, to enforce password requirements) using the `rbac.user.password` [filter](../filters.md).
@@ -57,8 +57,6 @@ Model-specific methods include:
 
 Find user by email.
 
-Can be used with the `SoftDeletes` trait trashed filters.
-
 **Parameters:**
 
 - `$email` (string)
@@ -106,12 +104,15 @@ Update `verified_at` field to `null.
 
 **Description:**
 
-Soft-delete all unverified users created and never updated,
-or last updated before timestamp.
+Delete all unverified users created and never updated.
+
+NOTE: When $new_users_only is false, existing users who update their email address but have not yet
+verified it will be removed.
 
 **Parameters:**
 
 - `$timestamp` (int)
+- `$new_users_only = true` (bool): When `false`, users last updated before the timestamp will also be removed
 
 **Returns:**
 

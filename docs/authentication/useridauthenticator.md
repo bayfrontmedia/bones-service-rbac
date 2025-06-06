@@ -1,20 +1,18 @@
-# [RBAC service](../README.md) > [Authentication](README.md) > EmailAuthenticator
+# [RBAC service](../README.md) > [Authentication](README.md) > UserIdAuthenticator
 
-The `Bayfront\BonesService\Rbac\Authenticators\EmailAuthenticator` is used to authenticate a user using their
-email address.
+The `Bayfront\BonesService\Rbac\Authenticators\UserIdAuthenticator` is used to authenticate a user using their ID.
 
 NOTE: Authentication is not secure with this method alone.
-To be secure, this authentication method should be used in conjunction with another authentication method, such as a TOTP.
 
 ## authenticate
 
 **Description:**
 
-Authenticate with [email](../models/users.md).
+Authenticate with [user id](../models/users.md).
 
 **Parameters:**
 
-- `$email` (string)
+- `$user_id` (mixed)
 - `$check_verified = true` (bool): Check if user is verified when require verification is enabled
 
 **Returns:**

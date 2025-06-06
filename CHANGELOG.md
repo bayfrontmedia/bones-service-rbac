@@ -13,6 +13,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
+## [1.3.0] - 2025.06.06
+
+### Added
+
+- Added `UserTokensModel` and related database migration
+- Added ability for user to authenticate with multiple access and refresh tokens,
+ allowing more than one simultaneous session per user
+- Added `$new_users_only` parameter to `deleteUnverified` method
+- Added `UserIdAuthenticator`
+- Added the `rbac.tenant.owner.updated` event
+
+### Changed
+
+- Removed token-specific methods from `UserMetaModel` to `UserTokensModel`
+- Updated documentation
+
+### Removed
+
+- Removed `SoftDeletes` trait from the following resource models:
+  - `TenantsModel`
+  - `UsersModel`
+- Removed `admin.all_permissions` config key in favor of admins inheriting all existing permissions with the option
+  of impersonating users.
+
 ## [1.2.0] - 2025.05.30
 
 ### Added

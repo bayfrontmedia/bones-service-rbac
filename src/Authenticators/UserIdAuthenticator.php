@@ -12,7 +12,7 @@ use Bayfront\BonesService\Rbac\Models\UsersModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\BonesService\Rbac\User;
 
-class EmailAuthenticator
+class UserIdAuthenticator
 {
 
     public RbacService $rbacService;
@@ -23,13 +23,12 @@ class EmailAuthenticator
     }
 
     /**
-     * Authenticate with email.
+     * Authenticate with user ID.
      *
      * NOTE:
      * Authentication is not secure with this method alone.
-     * To be secure, this authentication method should be used in conjunction with another authentication method, such as a TOTP.
      *
-     * @param string $email
+     * @param mixed $user_id
      * @param bool $check_verified (Check if user is verified when require verification is enabled)
      * @return User
      * @throws UnexpectedAuthenticationException
@@ -37,13 +36,13 @@ class EmailAuthenticator
      * @throws UserDoesNotExistException
      * @throws UserNotVerifiedException
      */
-    public function authenticate(string $email, bool $check_verified = true): User
+    public function authenticate(mixed $user_id, bool $check_verified = true): User
     {
 
         $usersModel = new UsersModel($this->rbacService);
 
         try {
-            $user_resource = $usersModel->findByEmail($email);
+            $user_resource = $usersModel->find($user_id);
         } catch (DoesNotExistException) {
             throw new UserDoesNotExistException('Unable to authenticate user: User does not exist');
         } catch (UnexpectedException) {

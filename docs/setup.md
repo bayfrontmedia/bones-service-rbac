@@ -20,9 +20,6 @@ return [
     'table_prefix' => 'rbac_', // RBAC database table prefix
     'protected_prefix' => '_app-', // Protected column prefix
     'invitation_duration' => 10080, // Max tenant invitation duration (in minutes), 0 for unlimited: 10080 = 7 days
-    'admin' => [
-        'all_permissions' => true, // Admin inherit all existing or tenant permissions? False to inherit all tenant permissions
-    ],
     'user' => [
         'require_verification' => true, // Require users to be verified to authenticate
         'key' => [
@@ -105,6 +102,11 @@ return [
             'max_limit' => -1,
             'max_related_depth' => 3,
         ],
+        'user_tokens' => [
+            'default_limit' => 100,
+            'max_limit' => -1,
+            'max_related_depth' => 3,
+        ],
         'users' => [
             'default_limit' => 100,
             'max_limit' => -1,
@@ -157,9 +159,9 @@ php bones rbac:seed --force
 
 ## Table diagram
 
-[Diagram file](diagram/bones-service-rbac-v1.1.diagram)
+[Diagram file](diagram/bones-service-rbac-v1.3.diagram)
 
-![](diagram/bones-service-rbac-v1.1.png)
+![](diagram/bones-service-rbac-v1.3.png)
 
 ## Scheduled jobs
 
@@ -168,6 +170,6 @@ To keep the database optimized, the following scheduled jobs are recommended:
 - If user verification is required, delete unverified users using [deleteUnverified](models/users.md#deleteunverified).
 - [Tenant invitations](models/tenantinvitations.md) and [user keys](models/userkeys.md) are both prunable by the `expires_at` field,
 and should be pruned regularly.
-- Delete any expired access and refresh tokens using [deleteExpiredTokens](models/usermeta.md#deleteexpiredtokens).
+- Delete any expired access and refresh tokens using [deleteExpiredTokens](models/usertokens.md#deleteexpiredtokens).
 - Delete any expired user meta TOTP's.
 - Other soft-deleted resources may need to be permanently deleted using the [purgeTrashed](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/traits/softdeletes.md#purgetrashed) method as needed.

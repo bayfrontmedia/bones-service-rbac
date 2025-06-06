@@ -12,6 +12,8 @@ service:
   accepted.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the user and the tenant ID are passed as parameters.
+- `rbac.tenant.owner.updated`: Executed when a [tenant owner is updated](models/tenants.md). The tenant ID,
+  previous owner ID, and updated owner IDs are passed as parameters
 - `rbac.user.created`: Executed when a [user is created](models/users.md). An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the created user
   is passed as a parameter.
 - `rbac.user.updated`: Executed when a [user is updated](models/users.md).

@@ -24,4 +24,5 @@ User permissions can be calculated using the [User](../user.md) class.
 - [PasswordAuthenticator](passwordauthenticator.md)
 - [TokenAuthenticator](tokenauthenticator.md)
 - [TotpAuthenticator](totpauthenticator.md)
+- [UserIdAuthenticator](useridauthenticator.md)
 - [UserKeyAuthenticator](userkeyauthenticator.md)

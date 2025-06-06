@@ -42,7 +42,7 @@ class PasswordAuthenticator
 
         $users_table = $usersModel->getTableName();
 
-        $results = $this->rbacService->ormService->db->row("SELECT id, password, salt FROM $users_table WHERE email = :email AND deleted_at IS NULL", [
+        $results = $this->rbacService->ormService->db->row("SELECT id, password, salt FROM $users_table WHERE email = :email", [
             'email' => $email
         ]);
 

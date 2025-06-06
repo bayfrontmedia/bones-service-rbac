@@ -7,10 +7,8 @@ access or refresh token.
 
 **Description:**
 
-Authenticate with [access or refresh token](../models/usermeta.md#createtoken).
+Authenticate with [access or refresh token](../models/usertokens.md#createtoken).
 Revokes tokens on errors as needed.
-
-The `rbac.auth.success` [event](../events.md) is executed on success, and `rbac.auth.fail.token` on failure.
 
 **Parameters:**
 

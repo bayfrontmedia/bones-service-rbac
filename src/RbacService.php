@@ -67,6 +67,7 @@ class RbacService extends Service
     public const TABLE_TENANTS = 'tenants';
     public const TABLE_USER_KEYS = 'user_keys';
     public const TABLE_USER_META = 'user_meta';
+    public const TABLE_USER_TOKENS = 'user_tokens';
     public const TABLE_USERS = 'users';
 
     /**

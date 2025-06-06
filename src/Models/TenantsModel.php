@@ -9,7 +9,6 @@ use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Traits\Castable;
 use Bayfront\BonesService\Orm\Traits\HasNullableJsonField;
-use Bayfront\BonesService\Orm\Traits\SoftDeletes;
 use Bayfront\BonesService\Rbac\Abstracts\RbacModel;
 use Bayfront\BonesService\Rbac\RbacService;
 use Bayfront\SimplePdo\Query;
@@ -18,7 +17,7 @@ use Exception;
 class TenantsModel extends RbacModel
 {
 
-    use Castable, HasNullableJsonField, SoftDeletes;
+    use Castable, HasNullableJsonField;
 
     /**
      * The container will resolve any dependencies.
@@ -284,6 +283,8 @@ class TenantsModel extends RbacModel
                 throw new InvalidFieldException('Unable to update tenant: Owner must exist as a tenant user');
             }
 
+            $this->ormService->events->doEvent('rbac.tenant.owner.updated', $existing->getPrimaryKey(), $existing->get('owner'), $fields['owner']);
+
         }
 
         if (isset($fields['meta']) && is_array($fields['meta'])) {
@@ -400,16 +401,6 @@ class TenantsModel extends RbacModel
         return 'meta';
     }
 
-    /**
-     * Trait: SoftDeletes
-     *
-     * @inheritDoc
-     */
-    protected function getDeletedAtField(): string
-    {
-        return 'deleted_at';
-    }
-
     /*
      * |--------------------------------------------------------------------------
      * | Model-specific
@@ -418,8 +409,6 @@ class TenantsModel extends RbacModel
 
     /**
      * Find tenant by domain.
-     *
-     * Can be used with the SoftDeletes trait trashed filters.
      *
      * @param string $domain
      * @return OrmResource
