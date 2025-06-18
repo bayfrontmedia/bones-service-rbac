@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
+## [1.3.1] - 2025.06.18
+
+### Added
+
+- Added meta key validation for resources using `HasNullableJsonField` trait
+
 ## [1.3.0] - 2025.06.06
 
 ### Added

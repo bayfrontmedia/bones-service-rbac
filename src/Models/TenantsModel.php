@@ -175,6 +175,7 @@ class TenantsModel extends RbacModel
      *
      * @param array $fields
      * @return array
+     * @throws InvalidFieldException
      */
     protected function onCreating(array $fields): array
     {

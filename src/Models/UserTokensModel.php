@@ -4,6 +4,7 @@ namespace Bayfront\BonesService\Rbac\Models;
 
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Application\Utilities\App;
+use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidRequestException;
 use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
@@ -174,6 +175,7 @@ class UserTokensModel extends RbacModel
      *
      * @param array $fields
      * @return array
+     * @throws InvalidFieldException
      */
     protected function onCreating(array $fields): array
     {
@@ -239,6 +241,7 @@ class UserTokensModel extends RbacModel
      * @param OrmResource $existing
      * @param array $fields (Fields to update)
      * @return array
+     * @throws InvalidFieldException
      */
     protected function onUpdating(OrmResource $existing, array $fields): array
     {

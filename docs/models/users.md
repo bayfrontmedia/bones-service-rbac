@@ -10,9 +10,6 @@ If the password is updated, the `rbac.user.password.updated` [event](../events.m
 Extreme care should be taken to ensure the password is never leaked or stored.
 If the user exists as a [tenant owner](tenants.md), they cannot be deleted.
 
-When updating the `meta` field, new keys will be merged with existing keys.
-Setting a value to `null` will remove the key.
-
 This service only checks if the user is enabled and verified for [authentication](../authentication/README.md).
 Any other use-cases should be handled at the app-level
 

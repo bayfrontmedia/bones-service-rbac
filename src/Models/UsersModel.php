@@ -5,6 +5,7 @@ namespace Bayfront\BonesService\Rbac\Models;
 use Bayfront\ArrayHelpers\Arr;
 use Bayfront\Bones\Application\Utilities\App;
 use Bayfront\BonesService\Orm\Exceptions\DoesNotExistException;
+use Bayfront\BonesService\Orm\Exceptions\InvalidFieldException;
 use Bayfront\BonesService\Orm\Exceptions\InvalidRequestException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
@@ -176,6 +177,7 @@ class UsersModel extends RbacModel
      * @param array $fields
      * @return array
      * @throws UnexpectedException
+     * @throws InvalidFieldException
      */
     protected function onCreating(array $fields): array
     {
@@ -256,6 +258,7 @@ class UsersModel extends RbacModel
      * @param array $fields (Fields to update)
      * @return array
      * @throws DoesNotExistException
+     * @throws InvalidFieldException
      */
     protected function onUpdating(OrmResource $existing, array $fields): array
     {

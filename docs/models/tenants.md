@@ -8,9 +8,6 @@ Upon successful creation, the owner will be added to the tenant as a tenant user
 If updating the tenant owner, the user must exist as a tenant user.
 If the tenant owner is updated, the `rbac.tenant.owner.updated` [event](../events.md) will be executed.
 
-When updating the `meta` field, new keys will be merged with existing keys.
-Setting a value to `null` will remove the key. 
-
 This service only checks if the tenant is enabled when calculating [user permissions](../user.md#getpermissions).
 Any other use-cases should be handled at the app-level
 
