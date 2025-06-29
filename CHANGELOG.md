@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
+## [1.3.2] - Upcoming
+
+### Changed
+
+- Updated model meta to not dot arrays
+
 ## [1.3.1] - 2025.06.18
 
 ### Added

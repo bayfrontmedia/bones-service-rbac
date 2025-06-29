@@ -221,18 +221,9 @@ class UserTokensModel extends RbacModel
      */
     protected function onRead(array $fields): array
     {
-
-        $fields = $this->transform($fields, [
+        return $this->transform($fields, [
             'meta' => [$this, 'jsonDecode']
         ]);
-
-        if (isset($fields['meta'])) {
-            $meta = Arr::dot($fields['meta']);
-            ksort($meta);
-            $fields['meta'] = Arr::undot($meta);
-        }
-
-        return $fields;
     }
 
     /**
@@ -297,8 +288,6 @@ class UserTokensModel extends RbacModel
     /**
      * Actions to perform before a resource is deleted.
      *
-     * - Filter protected meta prefix
-     *
      * @param OrmResource $resource
      * @return void
      */
@@ -335,8 +324,6 @@ class UserTokensModel extends RbacModel
      * Called after any actionable ResourceModel function is executed.
      * Functions executed inside another are ignored.
      * The name of the function is passed as a parameter.
-     *
-     * - Reset protected meta prefix filters
      *
      * @param string $function (Function which completed)
      * @return void
