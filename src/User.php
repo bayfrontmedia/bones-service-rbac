@@ -662,11 +662,11 @@ class User
             return;
         }
 
-        if (!$this->isAdmin() && !$this->tenantIsEnabled($tenant_id)) {
-            $this->permissions[$tenant_id] = [];
-            return;
-        }
-
+        /*
+         * The following block allows admins to automatically inherit all known permissions
+         * for the entire application, rather than only tenant permissions.
+         */
+        /*
         if ($this->isAdmin()) {
 
             $permissionsModel = new PermissionsModel($this->rbacService);
@@ -679,7 +679,15 @@ class User
 
             $this->permissions[$tenant_id] = $permissions->list();
 
-        } else if ($this->ownsTenant($tenant_id)) {
+        }
+        */
+
+        if (!$this->isAdmin() && !$this->tenantIsEnabled($tenant_id)) {
+            $this->permissions[$tenant_id] = [];
+            return;
+        }
+
+        if ($this->isAdmin() || $this->ownsTenant($tenant_id)) {
 
             $tenantPermissionsModel = new TenantPermissionsModel($this->rbacService);
 

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated model meta to not dot arrays
+- Updated `User` class to only allow admin users to inherit tenant permissions instead of all known global permissions
 
 ## [1.3.1] - 2025.06.18
 
