@@ -565,6 +565,30 @@ class UserTokensModel extends RbacModel
     }
 
     /**
+     * Delete all access tokens.
+     *
+     * @return bool
+     */
+    public function deleteAccessTokens(): bool
+    {
+        return $this->ormService->db->query("DELETE FROM $table WHERE type = :accessToken", [
+            'accessToken' => self::TOKEN_TYPE_ACCESS
+        ]);
+    }
+
+    /**
+     * Delete all refresh tokens.
+     *
+     * @return bool
+     */
+    public function deleteRefreshTokens(): bool
+    {
+        return $this->ormService->db->query("DELETE FROM $table WHERE type = :refreshToken", [
+            'refreshToken' => self::TOKEN_TYPE_REFRESH
+        ]);
+    }
+
+    /**
      * Quietly delete all expired tokens.
      *
      * @return void
@@ -577,7 +601,6 @@ class UserTokensModel extends RbacModel
         $this->ormService->db->query("DELETE FROM $table WHERE expires < :now", [
             'now' => time()
         ]);
-
 
     }
 
