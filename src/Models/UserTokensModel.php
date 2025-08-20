@@ -571,6 +571,9 @@ class UserTokensModel extends RbacModel
      */
     public function deleteAccessTokens(): bool
     {
+
+        $table = $this->getTableName();
+
         return $this->ormService->db->query("DELETE FROM $table WHERE type = :accessToken", [
             'accessToken' => self::TOKEN_TYPE_ACCESS
         ]);
@@ -583,6 +586,9 @@ class UserTokensModel extends RbacModel
      */
     public function deleteRefreshTokens(): bool
     {
+
+        $table = $this->getTableName();
+
         return $this->ormService->db->query("DELETE FROM $table WHERE type = :refreshToken", [
             'refreshToken' => self::TOKEN_TYPE_REFRESH
         ]);
