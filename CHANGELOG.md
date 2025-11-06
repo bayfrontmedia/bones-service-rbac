@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated model meta to not dot arrays
 - Updated `User` class to only allow admin users to inherit tenant permissions instead of all known global permissions
+- Updated dependencies
+- Updated `TenantsModel`, `UsersModel` and `UserTokensModel` to not use depreciated `getNullableJsonField` method
 
 ## [1.3.1] - 2025.06.18
 

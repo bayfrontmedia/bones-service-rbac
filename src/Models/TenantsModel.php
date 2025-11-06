@@ -280,7 +280,7 @@ class TenantsModel extends RbacModel
         }
 
         if (isset($fields['meta']) && is_array($fields['meta'])) {
-            $fields['meta'] = $this->updateNullableJsonField($this->ormService, $this->table_name, $this->primary_key, $existing->getPrimaryKey(), $this->getNullableJsonField(), $fields['meta']);
+            $fields['meta'] = $this->updateNullableJsonField($this->ormService, $this->table_name, $this->primary_key, $existing->getPrimaryKey(), 'meta', $fields['meta']);
         }
 
         return $fields;
@@ -382,16 +382,6 @@ class TenantsModel extends RbacModel
      * | Traits
      * |--------------------------------------------------------------------------
      */
-
-    /**
-     * Trait: HasNullableJsonField
-     *
-     * @inheritDoc
-     */
-    public function getNullableJsonField(): string
-    {
-        return 'meta';
-    }
 
     /*
      * |--------------------------------------------------------------------------
