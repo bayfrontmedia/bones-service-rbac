@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
+## [1.3.2] - 2025.11.06
+
+### Added
+
+- Added `deleteAccessTokens` and `deleteRefreshTokens` methods in the `UserTokens` model
+
+### Changed
+
+- Updated model meta to not dot arrays
+- Updated `User` class to only allow admin users to inherit tenant permissions instead of all known global permissions
+- Updated dependencies
+- Updated `TenantsModel`, `UsersModel` and `UserTokensModel` to not use depreciated `getNullableJsonField` method
+
 ## [1.3.1] - 2025.06.18
 
 ### Added

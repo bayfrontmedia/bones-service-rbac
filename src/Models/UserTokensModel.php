@@ -221,18 +221,9 @@ class UserTokensModel extends RbacModel
      */
     protected function onRead(array $fields): array
     {
-
-        $fields = $this->transform($fields, [
+        return $this->transform($fields, [
             'meta' => [$this, 'jsonDecode']
         ]);
-
-        if (isset($fields['meta'])) {
-            $meta = Arr::dot($fields['meta']);
-            ksort($meta);
-            $fields['meta'] = Arr::undot($meta);
-        }
-
-        return $fields;
     }
 
     /**
@@ -247,7 +238,7 @@ class UserTokensModel extends RbacModel
     {
 
         if (isset($fields['meta']) && is_array($fields['meta'])) {
-            $fields['meta'] = $this->updateNullableJsonField($this->ormService, $this->table_name, $this->primary_key, $existing->getPrimaryKey(), $this->getNullableJsonField(), $fields['meta']);
+            $fields['meta'] = $this->updateNullableJsonField($this->ormService, $this->table_name, $this->primary_key, $existing->getPrimaryKey(), 'meta', $fields['meta']);
         }
 
         return $fields;
@@ -297,8 +288,6 @@ class UserTokensModel extends RbacModel
     /**
      * Actions to perform before a resource is deleted.
      *
-     * - Filter protected meta prefix
-     *
      * @param OrmResource $resource
      * @return void
      */
@@ -336,8 +325,6 @@ class UserTokensModel extends RbacModel
      * Functions executed inside another are ignored.
      * The name of the function is passed as a parameter.
      *
-     * - Reset protected meta prefix filters
-     *
      * @param string $function (Function which completed)
      * @return void
      */
@@ -351,16 +338,6 @@ class UserTokensModel extends RbacModel
      * | Traits
      * |--------------------------------------------------------------------------
      */
-
-    /**
-     * Trait: HasNullableJsonField
-     *
-     * @inheritDoc
-     */
-    public function getNullableJsonField(): string
-    {
-        return 'meta';
-    }
 
     /*
      * |--------------------------------------------------------------------------
@@ -578,6 +555,36 @@ class UserTokensModel extends RbacModel
     }
 
     /**
+     * Delete all access tokens.
+     *
+     * @return bool
+     */
+    public function deleteAccessTokens(): bool
+    {
+
+        $table = $this->getTableName();
+
+        return $this->ormService->db->query("DELETE FROM $table WHERE type = :accessToken", [
+            'accessToken' => self::TOKEN_TYPE_ACCESS
+        ]);
+    }
+
+    /**
+     * Delete all refresh tokens.
+     *
+     * @return bool
+     */
+    public function deleteRefreshTokens(): bool
+    {
+
+        $table = $this->getTableName();
+
+        return $this->ormService->db->query("DELETE FROM $table WHERE type = :refreshToken", [
+            'refreshToken' => self::TOKEN_TYPE_REFRESH
+        ]);
+    }
+
+    /**
      * Quietly delete all expired tokens.
      *
      * @return void
@@ -590,7 +597,6 @@ class UserTokensModel extends RbacModel
         $this->ormService->db->query("DELETE FROM $table WHERE expires < :now", [
             'now' => time()
         ]);
-
 
     }
 

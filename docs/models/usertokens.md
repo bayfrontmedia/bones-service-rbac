@@ -37,6 +37,8 @@ Model-specific methods include:
 - [readToken](#readtoken)
 - [deleteToken](#deletetoken)
 - [deleteAllTokens](#deletealltokens)
+- [deleteAccessTokens](#deleteaccesstokens)
+- [deleteRefreshTokens](#deleterefreshtokens)
 - [deleteExpiredTokens](#deleteexpiredtokens)
 
 ## readByType
@@ -135,6 +137,34 @@ Quietly delete all tokens for user.
 **Returns:**
 
 - (bool)
+
+## deleteAccessTokens
+
+**Description:**
+
+Delete all access tokens.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (void)
+
+## deleteRefreshTokens
+
+**Description:**
+
+Delete all refresh tokens.
+
+**Parameters:**
+
+- (none)
+
+**Returns:**
+
+- (void)
 
 ## deleteExpiredTokens
 
