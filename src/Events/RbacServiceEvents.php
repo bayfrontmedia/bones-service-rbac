@@ -35,7 +35,7 @@ class RbacServiceEvents extends EventSubscriber implements EventSubscriberInterf
 
     public function addConsoleCommands(Application $application): void
     {
-        $application->add(new RbacSeed($this->rbacService));
+        $application->addCommand(new RbacSeed($this->rbacService));
     }
 
 }
