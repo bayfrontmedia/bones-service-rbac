@@ -13,7 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
-## [1.3.3]- 2025.12.09
+## [1.4.0] - 2026.01.08
+
+### Added
+
+- Added the following events:
+  - `rbac.tenant.role.created`
+  - `rbac.tenant.role.updated`
+  - `rbac.tenant.role.deleted`
+  - `rbac.tenant.team.created`
+  - `rbac.tenant.team.updated`
+  - `rbac.tenant.team.deleted`
+
+## [1.3.3] - 2025.12.09
 
 ### Changed
 

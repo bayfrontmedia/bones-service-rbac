@@ -31,6 +31,30 @@ service:
 - `rbac.user.password.updated`: Executed when a [user's password](models/users.md) is updated.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) representing the
   updated user is passed as a parameter.
+- `rbac.tenant.role.created`: Executed on creation of a [tenant role](models/tenantroles.md).
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the created tenant role is passed as a parameter.
+- `rbac.tenant.role.updated`: Executed when a [tenant role](models/tenantroles.md) is updated.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the updated resource,
+  an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
+  parameters.
+- `rbac.tenant.role.deleted`: Executed when a [tenant role](models/tenantroles.md) is deleted.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the pre-deleted resource
+  is passed as a parameter.
+- `rbac.tenant.team.created`: Executed on creation of a [tenant team](models/tenantteams.md).
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the created tenant team is passed as a parameter.
+- `rbac.tenant.team.updated`: Executed when a [tenant team](models/tenantteams.md) is updated.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the updated resource,
+  an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
+  parameters.
+- `rbac.tenant.team.deleted`: Executed when a [tenant team](models/tenantteams.md) is deleted.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the pre-deleted resource
+  is passed as a parameter.
 - `rbac.tenant.user.created`: Executed on creation of a [tenant user](models/tenantusers.md).
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the created tenant user is passed as a parameter.

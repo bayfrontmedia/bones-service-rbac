@@ -179,7 +179,7 @@ class TenantTeamsModel extends RbacModel
      */
     protected function onCreated(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.team.created', $resource);
     }
 
     /**
@@ -226,7 +226,7 @@ class TenantTeamsModel extends RbacModel
      */
     protected function onUpdated(OrmResource $resource, OrmResource $previous, array $fields): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.team.updated', $resource, $previous, $fields);
     }
 
     /**
@@ -270,7 +270,7 @@ class TenantTeamsModel extends RbacModel
      */
     protected function onDeleted(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.team.deleted', $resource);
     }
 
     /**
