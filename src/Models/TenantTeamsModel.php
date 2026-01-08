@@ -259,7 +259,7 @@ class TenantTeamsModel extends RbacModel
      */
     protected function onDeleting(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.team.deleting', $resource);
     }
 
     /**
