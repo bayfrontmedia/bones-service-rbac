@@ -20,10 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the following events:
   - `rbac.tenant.role.created`
   - `rbac.tenant.role.updated`
+  - `rbac.tenant.role.deleting`
   - `rbac.tenant.role.deleted`
   - `rbac.tenant.team.created`
   - `rbac.tenant.team.updated`
+  - `rbac.tenant.team.deleting`
   - `rbac.tenant.team.deleted`
+  - `rbac.tenant.user.deleting`
 
 ## [1.3.3] - 2025.12.09
 

@@ -310,6 +310,8 @@ class TenantUsersModel extends RbacModel
             throw new InvalidRequestException('Unable to delete tenant user: Tenant owner cannot be removed');
         }
 
+        $this->ormService->events->doEvent('rbac.tenant.user.deleting', $resource);
+
     }
 
     /**

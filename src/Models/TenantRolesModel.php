@@ -259,7 +259,7 @@ class TenantRolesModel extends RbacModel
      */
     protected function onDeleting(OrmResource $resource): void
     {
-
+        $this->ormService->events->doEvent('rbac.tenant.role.deleting', $resource);
     }
 
     /**

@@ -39,6 +39,10 @@ service:
   representing the updated resource,
   an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
   parameters.
+- `rbac.tenant.role.deleting`: Executed when a [tenant role](models/tenantroles.md) is deleting.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the resource
+  is passed as a parameter.
 - `rbac.tenant.role.deleted`: Executed when a [tenant role](models/tenantroles.md) is deleted.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the pre-deleted resource
@@ -51,6 +55,10 @@ service:
   representing the updated resource,
   an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
   parameters.
+- `rbac.tenant.team.deleting`: Executed when a [tenant team](models/tenantteams.md) is deleting.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the resource
+  is passed as a parameter.
 - `rbac.tenant.team.deleted`: Executed when a [tenant team](models/tenantteams.md) is deleted.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the pre-deleted resource
@@ -63,6 +71,10 @@ service:
   representing the updated resource,
   an `OrmResource` representing the pre-updated resource, and an array representing the updated fields are passed as
   parameters.
+- `rbac.tenant.user.deleting`: Executed when a [tenant user](models/tenantusers.md) is deleting.
+  An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
+  representing the resource
+  is passed as a parameter.
 - `rbac.tenant.user.deleted`: Executed when a [tenant user](models/tenantusers.md) is deleted.
   An [OrmResource](https://github.com/bayfrontmedia/bones-service-orm/blob/master/docs/ormresource.md) instance
   representing the pre-deleted resource
