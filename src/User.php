@@ -315,7 +315,7 @@ class User
 
             if (Arr::get($tenant, 'id') == $tenant_id) {
 
-                return $this->tenantIsEnabled($tenant_id);
+                return Arr::get($tenant, 'enabled') === true;
 
             }
 

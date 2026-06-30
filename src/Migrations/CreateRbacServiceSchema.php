@@ -234,7 +234,7 @@ class CreateRbacServiceSchema implements MigrationInterface
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP(),
             `updated_at` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(),
             `deleted_at` datetime NULL DEFAULT NULL,
-            PRIMARY KEY (`id`,`user`),
+            PRIMARY KEY (`id`),
             UNIQUE uq_uk_user__name(`user`,`name`),
             UNIQUE (`key_value`),
             CONSTRAINT `fk_uk_user__u_id` FOREIGN KEY (`user`) REFERENCES $this->table_users (`id`) ON DELETE CASCADE) 

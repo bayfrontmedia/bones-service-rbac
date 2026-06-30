@@ -50,11 +50,13 @@ class UpdateRbacServiceSchema_v1_3 implements MigrationInterface
             `user` char(36) NOT NULL,
             `type` varchar(255) NOT NULL,
             `expires` int unsigned NOT NULL,
-            `ip` varchar(255) NULL NOT NULL,
+            `ip` varchar(255) NULL DEFAULT NULL,
             `meta` JSON NULL DEFAULT NULL,
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP(),
             PRIMARY KEY (`id`),
             INDEX ut_type (type),
+            INDEX idx_ut_user_type (`user`, `type`),
+            INDEX idx_ut_expires (`expires`),
             CONSTRAINT `fk_ut_user__u_id` FOREIGN KEY (`user`) REFERENCES $this->table_users (`id`) ON DELETE CASCADE) 
             ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
