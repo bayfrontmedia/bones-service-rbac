@@ -9,7 +9,6 @@ use Bayfront\BonesService\Orm\Exceptions\OrmServiceException;
 use Bayfront\BonesService\Orm\Exceptions\UnexpectedException;
 use Bayfront\BonesService\Orm\OrmResource;
 use Bayfront\BonesService\Orm\Utilities\Parsers\QueryParser;
-use Bayfront\BonesService\Rbac\Models\PermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantInvitationsModel;
 use Bayfront\BonesService\Rbac\Models\TenantPermissionsModel;
 use Bayfront\BonesService\Rbac\Models\TenantRolePermissionsModel;
@@ -315,7 +314,7 @@ class User
 
             if (Arr::get($tenant, 'id') == $tenant_id) {
 
-                return $this->tenantIsEnabled($tenant_id);
+                return Arr::get($tenant, 'enabled') === true;
 
             }
 

@@ -13,6 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
+## [1.5.0] - 2026.07.17
+
+### Added
+
+- Added a database migration to perform miscellaneous optimizations
+
+### Changed
+
+- Updated `inEnabledTenant` method in `User` class to not perform another query with `tenantIsEnabled` when the tenant
+array is already known
+
+### Fixed
+
+- Fixed bug in `user_tokens` table schema where the `ip` column should be nullable
+
 ## [1.4.0] - 2026.01.08
 
 ### Added
