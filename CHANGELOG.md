@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
+## [1.5.1] - 2026.10.20
+
+### Changed
+
+- Added original exception message to caught exceptions in `TokenAuthenticator` class
+
 ## [1.5.0] - 2026.07.17
 
 ### Added
