@@ -60,8 +60,8 @@ class TokenAuthenticator
 
             $this->jwt->validateSignature($token);
 
-        } catch (TokenException) {
-            throw new InvalidTokenException('Unable to authenticate token: Invalid token');
+        } catch (TokenException $e) {
+            throw new InvalidTokenException('Unable to authenticate token: Invalid token (' . $e->getMessage() . ')');
         }
 
         /*
@@ -72,8 +72,8 @@ class TokenAuthenticator
 
             $decoded = $this->jwt->decode($token);
 
-        } catch (TokenException) {
-            throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to decode token');
+        } catch (TokenException $e) {
+            throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to decode token (' . $e->getMessage() . ')');
         }
 
         $user_id = Arr::get($decoded, 'payload.sub', '');
@@ -97,11 +97,11 @@ class TokenAuthenticator
 
             $this->jwt->validateClaims($token);
 
-        } catch (TokenException) { // Token expired
+        } catch (TokenException $e) { // Token expired
 
             $this->userTokensModel->deleteToken($user_id, $type);
 
-            throw new TokenDoesNotExistException('Unable to authenticate token: Invalid claims');
+            throw new TokenDoesNotExistException('Unable to authenticate token: Invalid claims (' . $e->getMessage() . ')');
 
         }
 
