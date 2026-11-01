@@ -506,6 +506,25 @@ class UserTokensModel extends RbacModel
     }
 
     /**
+     * Quietly delete a single token by its ID (jti).
+     *
+     * @param string $user_id
+     * @param string $jti
+     * @return bool
+     */
+    public function deleteTokenById(string $user_id, string $jti): bool
+    {
+
+        $table = $this->getTableName();
+
+        return $this->ormService->db->query("DELETE FROM $table WHERE user = :user AND id = :id", [
+            'user' => $user_id,
+            'id' => $jti
+        ]);
+
+    }
+
+    /**
      * Quietly delete all tokens by a specific type for user.
      *
      * @param string $user_id

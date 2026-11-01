@@ -13,12 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
 
-## [1.5.2] - 2026.11.01
+## [1.6.0] - 2026.11.01
+
+### Added
+
+- Added `deleteTokenById` method in `UserTokensModel` class to delete a single token by its ID
 
 ### Fixed
 
-- Fixed bug in `TokenAuthenticator` class where claims did not need to be validated 
-  when decoding token in `authenticateToken`
+- Fixed bugs in `TokenAuthenticator` class 
 
 ## [1.5.1] - 2026.10.20
 

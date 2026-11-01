@@ -109,11 +109,7 @@ class TokenAuthenticator
 
         } catch (TokenException $e) { // Token expired
 
-            try {
-                $this->userTokensModel->delete($jti);
-            } catch (UnexpectedException) {
-                throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to delete expired token');
-            }
+            $this->userTokensModel->deleteTokenById($user_id, $jti);
 
             throw new TokenDoesNotExistException('Unable to authenticate token: Invalid claims (' . $e->getMessage() . ')');
 
@@ -132,11 +128,7 @@ class TokenAuthenticator
 
         if ($exp < time()) {
 
-            try {
-                $this->userTokensModel->delete($jti);
-            } catch (UnexpectedException) {
-                throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to delete expired token');
-            }
+            $this->userTokensModel->deleteTokenById($user_id, $jti);
 
             throw new TokenDoesNotExistException('Unable to authenticate token: Token was expired');
 
@@ -185,11 +177,7 @@ class TokenAuthenticator
 
             if ($resource->get('expires') != Arr::get($decoded, 'payload.exp', '')) { // Default one to string so both non-existing do not match
 
-                try {
-                    $this->userTokensModel->delete($jti);
-                } catch (UnexpectedException) {
-                    throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to delete expired token');
-                }
+                $this->userTokensModel->deleteTokenById($user_id, $jti);
 
                 throw new TokenDoesNotExistException('Unable to authenticate token: Invalid token expiration');
 
