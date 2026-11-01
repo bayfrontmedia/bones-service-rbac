@@ -506,13 +506,13 @@ class UserTokensModel extends RbacModel
     }
 
     /**
-     * Quietly delete token for user.
+     * Quietly delete all tokens by a specific type for user.
      *
      * @param string $user_id
      * @param string $type (TOKEN_TYPE_* constant)
      * @return bool
      */
-    public function deleteToken(string $user_id, string $type): bool
+    public function deleteTokensByType(string $user_id, string $type): bool
     {
 
         $table = $this->getTableName();

@@ -70,13 +70,23 @@ class TokenAuthenticator
 
         try {
 
-            $decoded = $this->jwt->decode($token);
+            $decoded = $this->jwt->decode($token, false); // Signature already validated; claims are validated below
 
         } catch (TokenException $e) {
             throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to decode token (' . $e->getMessage() . ')');
         }
 
         $user_id = Arr::get($decoded, 'payload.sub', '');
+
+        if ($user_id === '') {
+            throw new InvalidTokenException('Unable to authenticate token: Missing SUB claim');
+        }
+
+        $jti = Arr::get($decoded, 'payload.jti', '');
+
+        if ($jti === '') {
+            throw new InvalidTokenException('Unable to authenticate token: Missing JTI claim');
+        }
 
         /*
          * Validate type
@@ -99,7 +109,11 @@ class TokenAuthenticator
 
         } catch (TokenException $e) { // Token expired
 
-            $this->userTokensModel->deleteToken($user_id, $type);
+            try {
+                $this->userTokensModel->delete($jti);
+            } catch (UnexpectedException) {
+                throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to delete expired token');
+            }
 
             throw new TokenDoesNotExistException('Unable to authenticate token: Invalid claims (' . $e->getMessage() . ')');
 
@@ -118,15 +132,19 @@ class TokenAuthenticator
 
         if ($exp < time()) {
 
-            $this->userTokensModel->deleteToken($user_id, $type);
+            try {
+                $this->userTokensModel->delete($jti);
+            } catch (UnexpectedException) {
+                throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to delete expired token');
+            }
 
             throw new TokenDoesNotExistException('Unable to authenticate token: Token was expired');
 
         }
 
         /*
-         * Claims are not validated when authenticating a refresh token since the token may be expired.
-         * If the token was expired, it may have been removed from the database.
+         * Refresh tokens are always checked against the database.
+         * Access tokens are checked only when tokens are revocable.
          */
 
         if ($type == $this->userTokensModel::TOKEN_TYPE_REFRESH
@@ -156,7 +174,7 @@ class TokenAuthenticator
             if ($resource->get('type') !== $type
                 || $resource->get('user') !== Arr::get($decoded, 'payload.sub', '')) { // Default one to string so both non-existing do not match
 
-                throw new UnexpectedAuthenticationException('Unable to authenticate token: Invalid key or jti');
+                throw new InvalidTokenException('Unable to authenticate token: Invalid key or jti');
 
             }
 
@@ -167,7 +185,11 @@ class TokenAuthenticator
 
             if ($resource->get('expires') != Arr::get($decoded, 'payload.exp', '')) { // Default one to string so both non-existing do not match
 
-                $this->userTokensModel->deleteToken($user_id, $type);
+                try {
+                    $this->userTokensModel->delete($jti);
+                } catch (UnexpectedException) {
+                    throw new UnexpectedAuthenticationException('Unable to authenticate token: Unable to delete expired token');
+                }
 
                 throw new TokenDoesNotExistException('Unable to authenticate token: Invalid token expiration');
 
