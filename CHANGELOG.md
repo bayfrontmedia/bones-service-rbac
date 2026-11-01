@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed bugs in `TokenAuthenticator` class 
+- Fixed bugs in `TokenAuthenticator` class related to exceptions being thrown when multiple tokens are found for a user
 
 ## [1.5.1] - 2026.10.20
 
