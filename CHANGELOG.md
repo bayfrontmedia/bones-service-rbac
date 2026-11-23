@@ -1,3 +1,4 @@
+<!--suppress MarkdownUnresolvedLinkLabel -->
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -12,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities
+
+## [1.6.0] - 2026.11.22
+
+### Changed
+
+- Updated database indexes
 
 ## [1.5.2] - 2026.11.01
 
